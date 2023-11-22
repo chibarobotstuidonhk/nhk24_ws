@@ -1,0 +1,53 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "stew: g++ build active file",
+			"type": "cppbuild",
+			"command": "g++",
+			"args": [
+				"-g",
+				"${file}",
+				"-Wall",
+				"-Wextra",
+				"-fsanitize=undefined",
+				"-pedantic-errors",
+				"-std=c++20",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "stew: setup and build",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"\". ./bash/setup.bash && . ./bash/build_src.bash\""
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "remove build install log",
+			"type": "shell",
+			"command": "rm",
+			"args": [
+				"-rf",
+				"./build",
+				"./install",
+				"./log"
+			],
+			"problemMatcher": []
+		}
+	]
+}

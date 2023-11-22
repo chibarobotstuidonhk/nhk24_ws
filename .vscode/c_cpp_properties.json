@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "ROS",
+            "includePath": [
+                "./install/can_plugins2/include/can_plugins2",
+                "./src/nhk24_use_amcl/include",
+                "./src/odom_check/include",
+                "./library",
+                "/opt/ros/humble/include/*/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compilerArgs": [
+                "-pedantic-errors"
+            ],
+            "cppStandard": "c++20"
+        }
+    ],
+    "version": 4
+}
