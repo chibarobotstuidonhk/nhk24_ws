@@ -7,3 +7,6 @@
 [submodule "src/urg_node2"]
 	path = src/urg_node2
 	url = https://github.com/Hokuyo-aut/urg_node2.git
+[submodule "library/CRSLibtmp"]
+	path = library/CRSLibtmp
+	url = https://github.com/Stew-000-1-0-011/CRSLibtmp.git
