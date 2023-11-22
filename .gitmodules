@@ -4,10 +4,6 @@
 [submodule "src/odom_check"]
 	path = src/odom_check
 	url = https://github.com/YUKICHI6105/odom_check.git
-
 [submodule "src/urg_node2"]
 	path = src/urg_node2
 	url = https://github.com/Hokuyo-aut/urg_node2.git
-[submodule "library/CRSLib"]
-	path = library/CRSLib
-	url = https://github.com/chibarobotstuidonhk/CRSLib.git
