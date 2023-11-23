@@ -1,3 +1,0 @@
-robot_state_publisher:
-  ros__parameters:
-    robot_description: "src/nhk24_use_amcl/urdf/description.urdf"
