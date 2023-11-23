@@ -1,9 +1,5 @@
 #!/bin/bash
 
-run_command() {
-    gnome-terminal --tab --title="$1" -- bash -c ". bash/setup_install.bash; $2"
-}
-
 # LiDAR(frame: laser) -> /scan_nonfiltered 
 run_command "urg_node2" "ros2 launch src/nhk24_use_amcl/launch/urg_node2.launch.py"
 # /scan_nonfiltered -> /scan
@@ -20,5 +16,5 @@ run_command "odom_check" "ros2 run odom_check odom_check_node"
 # /odom, /imu -> TF2 frame: odom
 run_command "robot_localization" "ros2 run robot_localization ekf_node --ros-args --params-file src/nhk24_use_amcl/launch/ekf_node.yaml"
 
-# /scan, /map, frame: odom, Smth about robot joints, param: initial_pose -> /amclPose, TF2 transform map->odom
-run_command "amcl" "ros2 run nav2_amcl amcl --ros-args --params-file src/nhk24_use_amcl/launch/amcl.yaml"
+# /scan, /map, frame: odom, Smth about robot joints, param: initial_pose -> /amcl_pose, TF2 transform map->odom
+run_command "amcl" "ros2 run nav2_amcl amcl --ros-args --params-file src/nhk24_use_amcl/launch/amcl.yaml; exec bash"
