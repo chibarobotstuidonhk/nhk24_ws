@@ -13,7 +13,7 @@
   <depend>can_plugins2</depend>
 
   <exec_depend>rviz</exec_depend>
-  <exec_depend>xacro</exec_depend>d
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
