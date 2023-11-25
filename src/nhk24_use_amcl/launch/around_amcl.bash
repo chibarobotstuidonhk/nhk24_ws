@@ -17,4 +17,4 @@ run_command "odom_check" "ros2 run odom_check odom_check_node"
 run_command "ekf_node" "ros2 launch src/nhk24_use_amcl/launch/ekf_node.launch.py"
 
 # /scan, /map, frame: odom, Smth about robot joints, param: initial_pose -> /amcl_pose, TF2 transform map->odom
-run_command "amcl" "ros2 run nav2_amcl amcl --ros-args --params-file src/nhk24_use_amcl/launch/amcl.yaml; exec bash"
+run_command "amcl" "ros2 run nav2_amcl amcl  --ros-args --log-level debug --params-file src/nhk24_use_amcl/launch/amcl.yaml"
