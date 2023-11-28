@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(nhk24_use_amcl)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -std=c++20)
 endif()
 
 # find dependencies
@@ -13,6 +13,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(can_plugins2 REQUIRED)
 
 include_directories(
@@ -29,8 +30,19 @@ ament_target_dependencies(filter_node
   can_plugins2
 )
 
+add_executable(omni4_node
+  src/omni4.cpp
+)
+ament_target_dependencies(omni4_node
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  geometry_msgs
+  can_plugins2
+)
+
 install(
-  TARGETS filter_node
+  TARGETS filter_node omni4_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
