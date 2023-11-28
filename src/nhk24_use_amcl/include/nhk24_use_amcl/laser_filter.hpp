@@ -1,11 +1,16 @@
 #pragma once
 
-#include <cstddef>
 #include <cmath>
+#include <functional>
+#include <utility>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 
-namespace nhk24_use_amcl::stew::laser_filter {
+#include "std_type.hpp"
+
+namespace nhk24_use_amcl::stew::laser_filter::impl {
+	using namespace crs_lib::integer_types;
+
 	struct LaserFilter final : rclcpp::Node
 	{
 		static constexpr float footprint_size = 0.5f;  // 正方形な機体の1辺の半分[m]
@@ -22,20 +27,11 @@ namespace nhk24_use_amcl::stew::laser_filter {
 		private:
 		void callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 		{
-			sensor_msgs::msg::LaserScan filtered_msg{};
-			filtered_msg.header = msg->header;
-			filtered_msg.angle_min = msg->angle_min;
-			filtered_msg.angle_max = msg->angle_max;
-			filtered_msg.angle_increment = msg->angle_increment;
-			filtered_msg.time_increment = msg->time_increment;
-			filtered_msg.scan_time = msg->scan_time;
-			filtered_msg.range_min = msg->range_min;
-			filtered_msg.range_max = msg->range_max;
-			filtered_msg.ranges.reserve(msg->ranges.size());
+			sensor_msgs::msg::LaserScan filtered_msg = std::move(*msg);
 
-			for(std::size_t i = 0; i < msg->ranges.size(); ++i)
+			for(size_t i = 0; i < filtered_msg.ranges.size(); ++i)
 			{
-				filtered_msg.ranges.push_back(cutoff_square(msg->ranges[i], msg->angle_min + msg->angle_increment * i));
+				filtered_msg.ranges[i] = cutoff_square(filtered_msg.ranges[i], filtered_msg.angle_min + filtered_msg.angle_increment * i);
 			}
 			pub->publish(filtered_msg);
 		}
@@ -47,4 +43,8 @@ namespace nhk24_use_amcl::stew::laser_filter {
 			return r_x * r_x < footprint_size * footprint_size && r_y * r_y < footprint_size * footprint_size ? 0.0f : r;
 		}
 	};
+}
+
+namespace nhk24_use_amcl::stew::laser_filter {
+	using impl::LaserFilter;
 }
