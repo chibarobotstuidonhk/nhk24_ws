@@ -1,11 +1,15 @@
 #pragma once
 
 #include <cmath>
+#include <compare>
 
 namespace nhk24_use_amcl::stew::vec2d {
 	struct Vec2d final {
 		double x{0.0};
 		double y{0.0};
+
+		friend constexpr auto operator<=>(const Vec2d& lhs, const Vec2d& rhs) noexcept = default;
+		friend constexpr auto operator==(const Vec2d& lhs, const Vec2d& rhs) noexcept -> bool = default;
 
 		friend constexpr auto operator+(const Vec2d& lhs, const Vec2d& rhs) noexcept -> Vec2d {
 			return Vec2d{lhs.x + rhs.x, lhs.y + rhs.y};
@@ -21,6 +25,14 @@ namespace nhk24_use_amcl::stew::vec2d {
 
 		friend constexpr auto operator*(const double lhs, const Vec2d& rhs) noexcept -> Vec2d {
 			return rhs * lhs;
+		}
+
+		friend constexpr auto operator/(const Vec2d& lhs, const double rhs) noexcept -> Vec2d {
+			return Vec2d{lhs.x / rhs, lhs.y / rhs};
+		}
+
+		friend constexpr auto operator/(const double lhs, const Vec2d& rhs) noexcept -> Vec2d {
+			return rhs / lhs;
 		}
 
 		friend constexpr auto dot(const Vec2d& lhs, const Vec2d& rhs) noexcept -> double {
@@ -47,6 +59,16 @@ namespace nhk24_use_amcl::stew::vec2d {
 			x *= rhs;
 			y *= rhs;
 			return *this;
+		}
+
+		constexpr auto operator/=(const double rhs) noexcept -> Vec2d& {
+			x /= rhs;
+			y /= rhs;
+			return *this;
+		}
+
+		constexpr auto operator-() const noexcept -> Vec2d {
+			return Vec2d{-x, -y};
 		}
 	
 		constexpr auto norm2() const noexcept -> double {
