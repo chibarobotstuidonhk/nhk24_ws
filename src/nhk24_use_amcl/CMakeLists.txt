@@ -12,12 +12,23 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(can_plugins2 REQUIRED)
 
 include_directories(
   include
+)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Vec2d.msg"
+  "msg/Twist2d.msg"
+  "msg/Path.msg"
+  "msg/Result.msg"
+  DEPENDENCIES builtin_interfaces
 )
 
 add_executable(filter_node
@@ -40,6 +51,8 @@ ament_target_dependencies(omni4_node
   geometry_msgs
   can_plugins2
 )
+
+ament_export_dependencies(rosidl_default_runtime)
 
 install(
   TARGETS filter_node omni4_node

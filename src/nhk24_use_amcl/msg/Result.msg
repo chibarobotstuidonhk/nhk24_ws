@@ -1,0 +1,2 @@
+builtin_interfaces/Time time
+bool is_goal_reached
