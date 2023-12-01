@@ -91,14 +91,20 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 		private:
 		static constexpr std::array<u32, 4> ids = {0x400u, 0x404u, 0x408u, 0x40Cu};  // 第一象限から反時計回りに見ていく
 
-		rclcpp::Publisher<can_plugins2::msg::Frame>::SharedPtr can_pub;
-		Logicool logicool;
+		/// @todo 以下の値を適切に設定する
+		static constexpr double center_to_wheel = 0.7071;  // 中心から駆動輪までの距離[m](default: 0.5 * sqrt(2))
+		static constexpr double wheel_radius = 0.150;  // 駆動輪の半径[m]
+		static constexpr double wheel_to_motor_ratio = 1.0;  // 駆動輪からモーターへの倍速比
 
 		State state{State::EmergencyStop};
 		Twist2d auto_twist_msg{{0.0, 0.0}, 0.0};
 		BodySpeedFixer body_speed_fixer{};
 		std::array<MotorSpeedFixer, 4> motor_speed_fixers{};
 		rclcpp::Time last_time{this->now()};
+
+		rclcpp::Publisher<can_plugins2::msg::Frame>::SharedPtr can_pub;
+		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+		Logicool logicool;
 
 		rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub{};
 		rclcpp::TimerBase::SharedPtr timer{};
@@ -107,6 +113,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 		Omni4(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
 			: Node("nhk24_0th_omni4", options),
 			can_pub(create_publisher<can_plugins2::msg::Frame>("can_tx", 10)),
+			cmd_vel_pub(create_publisher<geometry_msgs::msg::Twist>("actual_cmd_vel", 1)),
 			logicool{*this, "joy", {}, 10}
 		{
 			for(u32 i = 0; i < 4; ++i) {
@@ -169,19 +176,25 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 		void update(const Twist2d& target_twist, const double dt) {
 			const auto fixed_body_twist = body_speed_fixer.update(target_twist, dt);
 			const auto motor_speeds = calc_motor_speeds(fixed_body_twist);
+			Twist2d actual_twist{{0.0, 0.0}, 0.0};
 			for(u32 i = 0; i < 4; ++i) {
 				const auto motor_speed = motor_speed_fixers[i].update(motor_speeds[i], dt);
 				const auto msg = shirasu::target_frame(ids[i], motor_speed);
 				can_pub->publish(msg);
+
+				const auto v = motor_speed * wheel_radius / wheel_to_motor_ratio;
+				actual_twist.linear += v * rot(Vec2d{1, 0}, std::numbers::pi / 4.0 * i);
+				actual_twist.angular += v / center_to_wheel;
 			}
+			actual_twist *= (1.0 / 4.0);
+			geometry_msgs::msg::Twist msg;
+			msg.linear.x = actual_twist.linear.x;
+			msg.linear.y = actual_twist.linear.y;
+			msg.angular.z = actual_twist.angular;
+			cmd_vel_pub->publish(std::move(msg));
 		}
 
 		static constexpr auto calc_motor_speeds(const Twist2d& fixed_body_twist) noexcept -> std::array<double, 4> {
-			/// @todo 以下の値を適切に設定する
-			constexpr double center_to_wheel = 0.7071;  // 中心から駆動輪までの距離[m](default: 0.5 * sqrt(2))
-			constexpr double wheel_radius = 0.150;  // 駆動輪の半径[m]
-			constexpr double wheel_to_motor_ratio = 1.0;  // 駆動輪からモーターへの倍速比
-
 			return []<u32 ... i>(std::integer_sequence<u32, i...>, const Twist2d& fixed_body_twist) {
 				return std::array<double, 4> {
 					[](const Twist2d& fixed_body_twist) -> double {
