@@ -1,7 +1,11 @@
 #pragma once
 
 #include <cmath>
+#include <type_traits>
+#include <concepts>
 #include <compare>
+
+#include <nhk24_use_amcl/msg/vec2d.hpp>
 
 namespace nhk24_use_amcl::stew::vec2d {
 	struct Vec2d final {
@@ -77,6 +81,29 @@ namespace nhk24_use_amcl::stew::vec2d {
 
 		constexpr auto unitize() const noexcept -> Vec2d {
 			return *this * (1.0 / std::sqrt(norm2()));
+		}
+
+		template<class M>
+		static auto from_msg(const std::type_identity_t<M>& msg) noexcept -> Vec2d {
+			if constexpr(std::same_as<M, nhk24_use_amcl::msg::Vec2d>) {
+				return Vec2d{msg.x, msg.y};
+			}
+			else {
+				static_assert([]{return false;}(), "invalid messge type");
+			}
+		}
+
+		template<class M>
+		auto to_msg() const noexcept -> std::type_identity_t<M> {
+			if constexpr(std::same_as<M, nhk24_use_amcl::msg::Vec2d>) {
+				nhk24_use_amcl::msg::Vec2d msg{};
+				msg.x = x;
+				msg.y = y;
+				return msg;
+			}
+			else {
+				static_assert([]{return false;}(), "invalid messge type");
+			}
 		}
 	};
 }

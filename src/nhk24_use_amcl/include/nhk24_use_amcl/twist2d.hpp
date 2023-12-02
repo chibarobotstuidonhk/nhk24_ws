@@ -1,7 +1,12 @@
 #pragma once
 
+#include <type_traits>
+#include <concepts>
 #include <compare>
 #include "vec2d.hpp"
+
+#include <geometry_msgs/msg/twist.hpp>
+#include <nhk24_use_amcl/msg/twist2d.hpp>
 
 namespace nhk24_use_amcl::stew::twist2d {
 	struct Twist2d final {
@@ -61,6 +66,40 @@ namespace nhk24_use_amcl::stew::twist2d {
 
 		constexpr auto operator-() const noexcept -> Twist2d {
 			return Twist2d{-linear, -angular};
+		}
+
+		template<class M>
+		static auto from_msg(const std::type_identity_t<M>& msg) noexcept -> Twist2d {
+			if constexpr(std::same_as<M, geometry_msgs::msg::Twist>) {
+				return Twist2d{vec2d::Vec2d{msg.linear.x, msg.linear.y}, msg.angular.z};
+			}
+			else if constexpr(std::same_as<M, nhk24_use_amcl::msg::Twist2d>) {
+				return Twist2d{vec2d::Vec2d{msg.linear.x, msg.linear.y}, msg.angular};
+			}
+			else {
+				static_assert([]{return false;}(), "invalid message type");
+			}
+		}
+
+		template<class M>
+		auto to_msg() const noexcept -> M {
+			if constexpr(std::same_as<M, geometry_msgs::msg::Twist>) {
+				M msg{};
+				msg.linear.x = linear.x;
+				msg.linear.y = linear.y;
+				msg.angular.z = angular;
+				return msg;
+			}
+			else if constexpr(std::same_as<M, nhk24_use_amcl::msg::Twist2d>) {
+				M msg{};
+				msg.linear.x = linear.x;
+				msg.linear.y = linear.y;
+				msg.angular = angular;
+				return msg;
+			}
+			else {
+				static_assert([]{return false;}(), "invalid message type");
+			}
 		}
 	};
 }
