@@ -60,7 +60,8 @@ ament_target_dependencies(omni4_node
   can_plugins2
 )
 rosidl_target_interfaces(omni4_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
 
 add_executable(pacman_node
   src/pacman.cpp
@@ -73,10 +74,23 @@ ament_target_dependencies(pacman_node
   tf2_ros
 )
 rosidl_target_interfaces(pacman_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+
+add_executable(path_loader_node
+  src/path_loader.cpp
+)
+ament_target_dependencies(path_loader_node
+  rclcpp
+  rclcpp_components
+  std_msgs
+)
+rosidl_target_interfaces(path_loader_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
 
 install(
-  TARGETS filter_node omni4_node pacman_node
+  TARGETS filter_node omni4_node pacman_node path_loader_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
