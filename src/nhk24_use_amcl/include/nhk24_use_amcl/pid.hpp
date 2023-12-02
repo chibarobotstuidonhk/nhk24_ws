@@ -3,17 +3,21 @@
 namespace nhk24_use_amcl::stew::pid {
 
 	template<class T>
-	concept arithmetic = requires(T a, T b) {
+	concept additive = requires(T a, T b) {
 		{a + b} -> std::convertible_to<T>;
 		{a - b} -> std::convertible_to<T>;
+		{-a} -> std::convertible_to<T>;
+	};
+
+	template<class T>
+	concept arithmetic = additive<T> && requires(T a, T b) {
 		{a * b} -> std::convertible_to<T>;
 		{a / b} -> std::convertible_to<T>;
-		{-a} -> std::convertible_to<T>;
 	};
 
 	template<class Scalar, class Vector>
 	concept linear_algebra = arithmetic<Scalar>
-	&& arithmetic<Vector>
+	&& additive<Vector>
 	&& requires (Scalar s, Vector v) {
 		{v * s} -> std::convertible_to<Vector>;
 		{s * v} -> std::convertible_to<Vector>;
@@ -21,7 +25,7 @@ namespace nhk24_use_amcl::stew::pid {
 	};
 
 	template<class ValueT, class GainT = ValueT>
-	requires linear_algebra<ValueT, GainT>
+	requires linear_algebra<GainT, ValueT>
 	struct Pid final {
 		GainT k_p{1};
 		GainT k_i{0};
