@@ -1,5 +1,5 @@
 image: testmap.png
-resolution: 0.01
+resolution: 0.005
 origin: [0.0, 0.0, 0.0]
 negate: 0
 occupied_thresh: 0.6
