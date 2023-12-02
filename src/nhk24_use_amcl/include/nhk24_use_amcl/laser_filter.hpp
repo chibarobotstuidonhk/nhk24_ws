@@ -40,7 +40,7 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 		{
 			const auto r_x = r * std::cos(theta);
 			const auto r_y = r * std::sin(theta);
-			return r_x * r_x < footprint_size * footprint_size && r_y * r_y < footprint_size * footprint_size ? 0.0f : r;
+			return r_x * r_x < footprint_size * footprint_size && r_y * r_y < footprint_size * footprint_size ? -0.0125f : r;
 		}
 	};
 }
