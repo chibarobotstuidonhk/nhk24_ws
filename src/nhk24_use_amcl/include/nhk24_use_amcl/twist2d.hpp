@@ -77,7 +77,7 @@ namespace nhk24_use_amcl::stew::twist2d {
 				return Twist2d{vec2d::Vec2d{msg.linear.x, msg.linear.y}, msg.angular};
 			}
 			else {
-				static_assert([]{return false}(), "invalid message type");
+				static_assert([]{return false;}(), "invalid message type");
 			}
 		}
 
@@ -98,7 +98,7 @@ namespace nhk24_use_amcl::stew::twist2d {
 				return msg;
 			}
 			else {
-				static_assert([]{return false}(), "invalid message type");
+				static_assert([]{return false;}(), "invalid message type");
 			}
 		}
 	};
