@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
 project(nhk24_use_amcl)
 
+# # for debug
+# execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE compiler_version_output)
+# message(WARNING "Compiler version: ${compiler_version_output}")
+
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -std=c++20)
+  add_compile_options(-Wall -Wextra -Wpedantic -std=c++20 -fconcepts-diagnostics-depth=2)
 endif()
 
 # find dependencies
@@ -17,6 +22,8 @@ find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(can_plugins2 REQUIRED)
 
 include_directories(
@@ -31,6 +38,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES builtin_interfaces
 )
 
+ament_export_dependencies(rosidl_default_runtime)
+
 add_executable(filter_node
   src/laser_filter.cpp
 )
@@ -38,7 +47,6 @@ ament_target_dependencies(filter_node
   rclcpp
   rclcpp_components
   sensor_msgs
-  can_plugins2
 )
 
 add_executable(omni4_node
@@ -51,11 +59,24 @@ ament_target_dependencies(omni4_node
   geometry_msgs
   can_plugins2
 )
+rosidl_target_interfaces(omni4_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
-ament_export_dependencies(rosidl_default_runtime)
+add_executable(pacman_node
+  src/pacman.cpp
+)
+ament_target_dependencies(pacman_node
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  tf2
+  tf2_ros
+)
+rosidl_target_interfaces(pacman_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(
-  TARGETS filter_node omni4_node
+  TARGETS filter_node omni4_node pacman_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
