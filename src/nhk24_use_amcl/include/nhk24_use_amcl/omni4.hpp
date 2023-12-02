@@ -127,7 +127,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 		private:
 		void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
 			if(state == State::Auto) {
-				auto_twist_msg = Twist2d{{msg->linear.x, msg->linear.y}, msg->angular.z};
+				auto_twist_msg = Twist2d::from_msg<geometry_msgs::msg::Twist>(*msg);
 			}
 		}
 
@@ -187,11 +187,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 				actual_twist.angular += v / center_to_wheel;
 			}
 			actual_twist *= (1.0 / 4.0);
-			geometry_msgs::msg::Twist msg;
-			msg.linear.x = actual_twist.linear.x;
-			msg.linear.y = actual_twist.linear.y;
-			msg.angular.z = actual_twist.angular;
-			cmd_vel_pub->publish(std::move(msg));
+			cmd_vel_pub->publish(actual_twist.to_msg<geometry_msgs::msg::Twist>());
 		}
 
 		static constexpr auto calc_motor_speeds(const Twist2d& fixed_body_twist) noexcept -> std::array<double, 4> {
