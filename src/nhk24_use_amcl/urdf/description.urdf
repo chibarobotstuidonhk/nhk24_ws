@@ -25,6 +25,13 @@
       <inertia ixx="0.6156249999999999" ixy="0.0" ixz="0.0" iyy="1.2249999999999999" iyz="0.0" izz="0.6156249999999999"/>
     </inertial>
   </link>
+  <link name="base_footprint_link">
+	</link>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint_link"/>
+    <origin xyz="0 0 0"/>
+  </joint>
   <link name="drivewhl_1_link">
     <visual>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 0"/>
