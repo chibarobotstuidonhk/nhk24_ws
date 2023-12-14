@@ -20,7 +20,7 @@ namespace nhk24_use_amcl::stew::shirasu::impl {
 		, recover_position
 	};
 	
-	inline auto command_frame(const u8 id, Command command) noexcept -> can_plugins2::msg::Frame {
+	inline auto command_frame(const u32 id, Command command) noexcept -> can_plugins2::msg::Frame {
 		can_plugins2::msg::Frame ret{};
 		ret.is_rtr = false;
 		ret.is_extended = false;
@@ -31,7 +31,7 @@ namespace nhk24_use_amcl::stew::shirasu::impl {
 		return ret;
 	}
 
-	inline auto target_frame(const u8 id, const float target) noexcept -> can_plugins2::msg::Frame {
+	inline auto target_frame(const u32 id, const float target) noexcept -> can_plugins2::msg::Frame {
 		can_plugins2::msg::Frame ret{};
 		ret.is_rtr = false;
 		ret.is_extended = false;
