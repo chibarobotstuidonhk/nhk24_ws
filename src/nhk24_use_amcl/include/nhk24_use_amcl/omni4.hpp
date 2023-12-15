@@ -94,7 +94,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 	struct Omni4 final : rclcpp::Node {
 		private:
-		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x110), mkopt(0x144u), mkopt(0x150u), mkopt(0x120)};  // 第一象限から反時計回りに見ていく
+		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x120), mkopt(0x144u), mkopt(0x150u), mkopt(0x110)};  // 第一象限から反時計回りに見ていく
 
 		/// @todo 以下の値を適切に設定する -> したつもり
 		static constexpr double center_to_wheel = 0.504;  // 中心から駆動輪までの距離[m](default: 実測値(雑)の504mm)
