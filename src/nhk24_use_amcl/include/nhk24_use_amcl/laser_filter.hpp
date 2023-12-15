@@ -7,13 +7,16 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 
 #include "std_type.hpp"
+#include "vec2d.hpp"
 
 namespace nhk24_use_amcl::stew::laser_filter::impl {
 	using namespace crs_lib::integer_types;
 
 	struct LaserFilter final : rclcpp::Node
 	{
-		static constexpr float footprint_size = 0.5f;  // 正方形な機体の1辺の半分[m]
+		static constexpr float footprint_size = 0.504f / 1.4142f;  // 正方形な機体の1辺の半分[m]
+		static constexpr stew::vec2d::Vec2d base_to_lidar = {0.010, -0.040};
+
 
 		rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub;
 		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub;
@@ -38,8 +41,8 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 
 		static constexpr auto cutoff_square(const float r, const float theta) noexcept -> float
 		{
-			const auto r_x = r * std::cos(theta);
-			const auto r_y = r * std::sin(theta);
+			const auto r_x = r * std::cos(theta) - base_to_lidar.x;
+			const auto r_y = r * std::sin(theta) - base_to_lidar.y;
 			return r_x * r_x < footprint_size * footprint_size && r_y * r_y < footprint_size * footprint_size ? -0.0125f : r;
 		}
 	};

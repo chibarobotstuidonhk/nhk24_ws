@@ -48,6 +48,9 @@ ament_target_dependencies(filter_node
   rclcpp_components
   sensor_msgs
 )
+rosidl_target_interfaces(filter_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
 
 add_executable(omni4_node
   src/omni4.cpp
