@@ -94,12 +94,12 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 	struct Omni4 final : rclcpp::Node {
 		private:
-		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x110), mkopt(0x144u), mkopt(0x150u), std::nullopt};  // 第一象限から反時計回りに見ていく
+		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x110), mkopt(0x144u), mkopt(0x150u), mkopt(0x120)};  // 第一象限から反時計回りに見ていく
 
 		/// @todo 以下の値を適切に設定する -> したつもり
-		static constexpr double center_to_wheel = 0.7071;  // 中心から駆動輪までの距離[m](default: 0.5 * sqrt(2))
-		static constexpr double wheel_radius = 0.150;  // 駆動輪の半径[m]
-		static constexpr double wheel_to_motor_ratio = 8.0;  // 駆動輪からモーターへの倍速比
+		static constexpr double center_to_wheel = 0.504;  // 中心から駆動輪までの距離[m](default: 実測値(雑)の504mm)
+		static constexpr double wheel_radius = 0.150;  // 駆動輪の半径[m](雑)
+		static constexpr double wheel_to_motor_ratio = 33.45;  // 駆動輪からモーターへの倍速比
 
 		State state{State::EmergencyStop};
 		Twist2d auto_twist_msg{{0.0, 0.0}, 0.0};
@@ -160,7 +160,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 				{
 					auto target_twist = Twist2d {
 							{
-							BodySpeedFixer::max_linear * std::sqrt(0.5) * logicool.get_axis(Logicool::Axes::l_stick_LR)
+							-BodySpeedFixer::max_linear * std::sqrt(0.5) * logicool.get_axis(Logicool::Axes::l_stick_LR)
 							, BodySpeedFixer::max_linear * std::sqrt(0.5) * logicool.get_axis(Logicool::Axes::l_stick_UD)
 						}
 						, BodySpeedFixer::max_angular * logicool.get_axis(Logicool::Axes::r_stick_LR)
@@ -187,7 +187,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 				if(ids[i]) {
 					const auto msg = shirasu::target_frame(*ids[i], motor_speed);
 					can_pub->publish(msg);
-					rclcpp::sleep_for(1ms);
+					// rclcpp::sleep_for(1ms);
 				}
 
 				const auto v = motor_speed * wheel_radius / wheel_to_motor_ratio;
@@ -211,7 +211,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 			return []<u32 ... i>(std::integer_sequence<u32, i...>, const Twist2d& fixed_body_twist) {
 				return std::array<double, 4> {
 					[](const Twist2d& fixed_body_twist) -> double {
-						auto v = dot(fixed_body_twist.linear, rot(Vec2d{1, 0}, std::numbers::pi / 4.0 + std::numbers::pi / 2.0 * i)) + fixed_body_twist.angular * center_to_wheel;
+						auto v = dot(fixed_body_twist.linear, rot(Vec2d{0, 1}, std::numbers::pi / 4.0 + std::numbers::pi / 2.0 * i)) + fixed_body_twist.angular * center_to_wheel;
 						return v / wheel_radius * wheel_to_motor_ratio;
 					}(fixed_body_twist) ...
 				};
