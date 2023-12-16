@@ -8,7 +8,6 @@
 
 #include "std_type.hpp"
 #include "vec2d.hpp"
-#include "range_sum.hpp"
 
 namespace nhk24_use_amcl::stew::laser_filter::impl {
 	using namespace crs_lib::integer_types;
@@ -64,12 +63,6 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 				if(r_x * r_x < footprint_size * footprint_size && r_y * r_y < footprint_size * footprint_size) return true;
 
 				return false;
-			};
-
-			struct State final {
-				stew::range_sum::RangeSum<float, 5> cov_xy;
-				stew::range_sum::RangeSum<float, 5> cov_x;
-				stew::range_sum::RangeSum<float, 5> cov_y;
 			};
 			
 			constexpr auto exclude_radial = [](const RTheta& p_this, const RTheta& p_next, ) noexcept -> bool
