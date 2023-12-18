@@ -46,7 +46,7 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 			// remove the points inside the robot
 			constexpr auto exclude_square = [](const RTheta& p) noexcept -> bool
 			{
-				constexpr float footprint_size = 0.600f / 1.4142f;  // 正方形な機体の1辺の半分[m]
+				constexpr float footprint_size = 0.700f / 1.4142f;  // 正方形な機体の1辺の半分[m]
 				constexpr stew::vec2d::Vec2d base_to_lidar = {0.010, -0.040};  // ほんとはbase_linkから取得すべき
 
 				const auto [r_x, r_y] = p.to_xy() - base_to_lidar;
@@ -59,7 +59,7 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 			{
 				constexpr float threshold = 0.100f;
 
-				const auto gap = p.r - p_last.r;
+				const auto gap = (p.r - p_last.r) * 2 / (p.r + p_last.r);
 				return gap * gap > threshold * threshold;
 			};
 
@@ -69,7 +69,8 @@ namespace nhk24_use_amcl::stew::laser_filter::impl {
 				const auto p = get_r_theta(filtered_msg, i);
 				if(exclude_square(p) || exclude_radial_gap(p, p_last))
 				{
-					filtered_msg.ranges[i] = -0.001f;
+					// filtered_msg.ranges[i] = std::nanf("");
+					filtered_msg.ranges[i] = 0.0f;
 				}
 				p_last = p;
 			}
