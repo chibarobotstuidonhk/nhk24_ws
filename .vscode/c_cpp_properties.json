@@ -7,6 +7,7 @@
                 "./install/nhk24_use_amcl/include/nhk24_use_amcl",
                 "./src/nhk24_use_amcl/include",
                 "./src/odom_check/include",
+                "./src/emcl2_ros2/include",
                 "./library",
                 "/opt/ros/humble/include/*/"
             ],
