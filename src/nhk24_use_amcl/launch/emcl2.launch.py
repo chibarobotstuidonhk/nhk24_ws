@@ -15,7 +15,7 @@ def generate_launch_description():
 
     declare_map_yaml = DeclareLaunchArgument(
         'map',
-        default_value='src/nhk24_use_amcl/map/testmap3.yaml', #
+        default_value='src/nhk24_use_amcl/map/testmap4.yaml', #
         description='Full path to map yaml file to load')
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
