@@ -5,7 +5,8 @@
     global_frame_id: "map"
     odom_frame_id: "odom"
     base_frame_id: "base_link"
-    footprint_frame_id: "base_footprint_link"
+    # footprint_frame_id: "base_footprint_link"
+    footprint_frame_id: "base_link"
     laser_min_range: 0.0  # 未実装？
     laser_max_range: 100000000.0 # 未実装？
     scan_increment: 1
