@@ -11,10 +11,11 @@ run_command "map_server" "ros2 run nav2_map_server map_server --ros-args --param
 # URDF -> TF2 Smth about robot joint
 run_command "robot_state_publisher" "ros2 launch src/nhk24_use_amcl/launch/robot_state_publisher.launch.py"
 
-# /can_rx -> /odom, /imu
-run_command "odom_check" "ros2 run odom_check odom_check_node"
-# /odom, /imu -> TF2 frame: odom
-run_command "ekf_node" "ros2 launch src/nhk24_use_amcl/launch/ekf_node.launch.py"
+# # /can_rx -> /odom, /imu
+# run_command "odom_check" "ros2 run odom_check odom_check_node"
+# # /odom, /imu -> TF2 frame: odom
+# run_command "ekf_node" "ros2 launch src/nhk24_use_amcl/launch/ekf_node.launch.py"
+run_command "odometry2024" "ros2 run odometry2024 odom_node"
 
 # /scan, /map, frame: odom, Smth about robot joints, param: initial_pose -> /amcl_pose, TF2 transform map->odom
 run_command "amcl" "ros2 run nav2_amcl amcl  --ros-args --log-level debug --params-file src/nhk24_use_amcl/launch/amcl.yaml"
