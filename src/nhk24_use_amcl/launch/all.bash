@@ -1,7 +1,7 @@
 # create tab
 run_command "rviz2" "rviz2"
 . src/nhk24_use_amcl/launch/around_amcl.bash
-# run_command "can_plugins2" "ros2 launch src/can_plugins2/launch/slcan_bridge_launch.xml"
+run_command "can_plugins2" "ros2 launch src/can_plugins2/launch/slcan_bridge_launch.xml"
 
 # lifecycle manage
 # urg_node2 automatically transit to active by default.

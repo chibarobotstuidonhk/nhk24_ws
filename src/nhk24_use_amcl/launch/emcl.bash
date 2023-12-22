@@ -1,5 +1,3 @@
-run_command "rviz2" "rviz2"
-
 # # LiDAR(frame: laser) -> /scan_nonfiltered 
 run_command "urg_node2" "ros2 launch src/nhk24_use_amcl/launch/urg_node2.launch.py"
 # /scan_nonfiltered -> /scan
