@@ -22,6 +22,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(can_plugins2 REQUIRED)
@@ -41,12 +42,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ament_export_dependencies(rosidl_default_runtime)
 
 add_executable(filter_node
-  src/laser_filter.cpp
+  src/filter_node.cpp
 )
 ament_target_dependencies(filter_node
   rclcpp
   rclcpp_components
   sensor_msgs
+  geometry_msgs
+  visualization_msgs
 )
 rosidl_target_interfaces(filter_node
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
