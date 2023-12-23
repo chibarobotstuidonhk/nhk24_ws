@@ -1,0 +1,10 @@
+uint16 seg_window
+float32 seg_threshold
+
+uint16 shadow_window
+float32 shadow_threshold_angle
+
+float32 base_to_lidar_x
+float32 base_to_lidar_y
+float32 footprint_size_x
+float32 footprint_size_y

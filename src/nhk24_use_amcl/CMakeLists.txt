@@ -36,6 +36,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Twist2d.msg"
   "msg/Path.msg"
   "msg/Result.msg"
+  "msg/FilterParam.msg"
   DEPENDENCIES builtin_interfaces
 )
 

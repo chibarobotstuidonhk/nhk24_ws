@@ -6,6 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <visualization_msgs/msg/marker.hpp>
+#include <nhk24_use_amcl/msg/filter_param.hpp>
 
 #include "std_type.hpp"
 #include "vec2d.hpp"
@@ -15,6 +16,7 @@
 
 namespace nhk24_use_amcl::stew::filter_node::impl {
 	using namespace crs_lib::integer_types;
+	using Vec2d = vec2d::Vec2d_<float>;
 	using Scan = scan::Scan;
 	using laser_filters::filter_chain;
 	using laser_filters::ShadowFilter;
@@ -25,17 +27,31 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 	{
 		rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_scan;
 		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_marker;
-		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub;
+		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_scan;
+		rclcpp::Subscription<nhk24_use_amcl::msg::FilterParam>::SharedPtr sub_seg_param;
+		u16 seg_window;
+		float seg_threshold;
+		Vec2d base_to_lidar;
+		Vec2d footprint_size;
+		float shadow_filter_threshold_angle;
+		u16 shadow_filter_window;
 
 		FilterNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
 			: Node("nhk24_0th_filter_node", options)
 			, pub_scan(create_publisher<sensor_msgs::msg::LaserScan>("scan", 10))
 			, pub_marker(create_publisher<visualization_msgs::msg::Marker>("segment_line", 10))
-			, sub(create_subscription<sensor_msgs::msg::LaserScan>("scan_nonfiltered", 10, std::bind(&FilterNode::callback, this, std::placeholders::_1)))
+			, sub_scan(create_subscription<sensor_msgs::msg::LaserScan>("scan_nonfiltered", 10, std::bind(&FilterNode::scan_callback, this, std::placeholders::_1)))
+			, sub_seg_param(create_subscription<nhk24_use_amcl::msg::FilterParam>("seg_param", 10, std::bind(&FilterNode::callback_seg_param, this, std::placeholders::_1)))
+			, seg_window(10)
+			, seg_threshold(0.100f)
+			, base_to_lidar(0.010, -0.040)
+			, footprint_size(0.700f / 1.4142f, 0.700f / 1.4142f)
+			, shadow_filter_threshold_angle(0.100f)
+			, shadow_filter_window(10)
 		{}
 
 		private:
-		void callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
+		void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 		{
 			// struct RTheta final {
 			// 	float r;
@@ -86,12 +102,12 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 
 			auto[scan, filtered_msg] = Scan::from_msg(std::move(*msg));
 
-			constexpr auto chain = filter_chain(
-				ShadowFilter::make(std::numbers::pi / 3, 1)
-				, BoxFilter::make({0.010f, -0.400f}, {0.700f / 1.4142f, 0.700f / 1.4142f})
+			const auto chain = filter_chain(
+				ShadowFilter::make(this->shadow_filter_threshold_angle, this->shadow_filter_window)
+				, BoxFilter::make(this->base_to_lidar, this->footprint_size)
 			);
 
-			auto seg_line = SegmentLine::make(10, 0.100f);
+			auto seg_line = SegmentLine::make(this->seg_window, this->seg_threshold);
 			for(u16 i = 0; i < Scan::length; ++i)
 			{
 				scan.rs[i] = chain(scan, i);
@@ -103,6 +119,34 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			filtered_msg.ranges = std::move(scan.rs);
 
 			pub_scan->publish(filtered_msg);
+		}
+
+		void callback_seg_param(const nhk24_use_amcl::msg::FilterParam::SharedPtr msg)
+		{
+			seg_window = msg->seg_window;
+			seg_threshold = msg->seg_threshold;
+			base_to_lidar = Vec2d{msg->base_to_lidar_x, msg->base_to_lidar_y};
+			footprint_size = Vec2d{msg->footprint_size_x, msg->footprint_size_y};
+			shadow_filter_threshold_angle = msg->shadow_threshold_angle;
+			shadow_filter_window = msg->shadow_window;
+
+			RCLCPP_INFO (
+				this->get_logger()
+				, "seg_param: window=%d"
+					", threshold=%f"
+					", base_to_lidar=(%f, %f)"
+					", footprint_size=(%f, %f)"
+					", shadow_threshold_angle=%f"
+					", shadow_window=%d"
+				, seg_window
+				, seg_threshold
+				, base_to_lidar.x
+				, base_to_lidar.y
+				, footprint_size.x
+				, footprint_size.y
+				, shadow_filter_threshold_angle
+				, shadow_filter_window
+			);
 		}
 
 		static auto make_marker(const auto& filtered_msg, const Scan& scan, const std::vector<u16>& indices) -> visualization_msgs::msg::Marker {
