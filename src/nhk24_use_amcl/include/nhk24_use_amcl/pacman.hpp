@@ -147,7 +147,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					++i;
 				}
 				
-				current_index = most_closest_index;
+				current_index = most_closest_index + step;
 			}
 			else {
 				// just heading to the goal
