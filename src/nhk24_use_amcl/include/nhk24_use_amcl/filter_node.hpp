@@ -28,7 +28,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 		rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_scan;
 		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_marker;
 		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_scan;
-		rclcpp::Subscription<nhk24_use_amcl::msg::FilterParam>::SharedPtr sub_seg_param;
+		rclcpp::Subscription<nhk24_use_amcl::msg::FilterParam>::SharedPtr sub_filter_param;
 		u16 seg_window;
 		float seg_threshold;
 		Vec2d base_to_lidar;
@@ -41,7 +41,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			, pub_scan(create_publisher<sensor_msgs::msg::LaserScan>("scan", 10))
 			, pub_marker(create_publisher<visualization_msgs::msg::Marker>("segment_line", 10))
 			, sub_scan(create_subscription<sensor_msgs::msg::LaserScan>("scan_nonfiltered", 10, std::bind(&FilterNode::scan_callback, this, std::placeholders::_1)))
-			, sub_seg_param(create_subscription<nhk24_use_amcl::msg::FilterParam>("seg_param", 10, std::bind(&FilterNode::callback_seg_param, this, std::placeholders::_1)))
+			, sub_filter_param(create_subscription<nhk24_use_amcl::msg::FilterParam>("filter_param", 10, std::bind(&FilterNode::callback_filter_param, this, std::placeholders::_1)))
 			, seg_window(10)
 			, seg_threshold(0.100f)
 			, base_to_lidar(0.010, -0.040)
@@ -108,31 +108,32 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			);
 
 			auto seg_line = SegmentLine::make(this->seg_window, this->seg_threshold);
-			for(u16 i = 0; i < Scan::length; ++i)
+			for(u16 i = 0; i < scan.rs.size(); ++i)
 			{
 				scan.rs[i] = chain(scan, i);
 				seg_line = std::move(seg_line).update(scan, i);
 			}
 
 			auto marker_msg = make_marker(filtered_msg, scan, seg_line.indices);
+			pub_marker->publish(marker_msg);
 
 			filtered_msg.ranges = std::move(scan.rs);
 
 			pub_scan->publish(filtered_msg);
 		}
 
-		void callback_seg_param(const nhk24_use_amcl::msg::FilterParam::SharedPtr msg)
+		void callback_filter_param(const nhk24_use_amcl::msg::FilterParam::SharedPtr msg)
 		{
-			seg_window = msg->seg_window;
-			seg_threshold = msg->seg_threshold;
-			base_to_lidar = Vec2d{msg->base_to_lidar_x, msg->base_to_lidar_y};
-			footprint_size = Vec2d{msg->footprint_size_x, msg->footprint_size_y};
-			shadow_filter_threshold_angle = msg->shadow_threshold_angle;
-			shadow_filter_window = msg->shadow_window;
+			if(msg->seg_window != 0) seg_window = msg->seg_window;
+			if(msg->seg_threshold != 0.0) seg_threshold = msg->seg_threshold;
+			if(const auto v = Vec2d{msg->base_to_lidar_x, msg->base_to_lidar_y}; v.norm2() != 0.0) base_to_lidar = v;
+			if(const auto v = Vec2d{msg->footprint_size_x, msg->footprint_size_y}; v.norm2() != 0.0) footprint_size = v;
+			if(msg->shadow_threshold_angle != 0.0) shadow_filter_threshold_angle = msg->shadow_threshold_angle;
+			if(msg->shadow_window != 0) shadow_filter_window = msg->shadow_window;
 
 			RCLCPP_INFO (
 				this->get_logger()
-				, "seg_param: window=%d"
+				, "filter_param: window=%d"
 					", threshold=%f"
 					", base_to_lidar=(%f, %f)"
 					", footprint_size=(%f, %f)"
