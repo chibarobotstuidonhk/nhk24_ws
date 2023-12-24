@@ -22,7 +22,7 @@ namespace nhk24_use_amcl::stew::segment_line::impl {
 
 		static auto make(const u16 window, const float threshold) -> SegmentLine {
 			std::vector<u16> tmp{};
-			tmp.reserve(Scan::length);
+			tmp.reserve(Scan::max_length);
 			return SegmentLine{std::move(tmp), Vec2d{0.0f, 0.0f}, 0, window, threshold};
 		}
 

@@ -33,7 +33,7 @@ namespace nhk24_use_amcl::stew::scan::impl {
 	};
 
 	struct Scan final {
-		static constexpr u16 length = 1440;
+		static constexpr u16 max_length = 1440;
 
 		std::vector<float> rs;
 		float angle_min;
@@ -58,12 +58,12 @@ namespace nhk24_use_amcl::stew::scan::impl {
 		}
 
 		auto nth_rtheta(const i16 i) const noexcept -> RTheta {
-			if(i < 0 || (i16)length <= i) return RTheta::make(nan, nan);
+			if(i < 0 || (i16)this->rs.size() <= i) return RTheta::make(nan, nan);
 			else return RTheta::make(this->rs[i], this->angle_min + this->angle_increment * i);
 		}
 
 		auto nth_r(const i16 i) const noexcept -> float {
-			if(i < 0 || (i16)length <= i) return nan;
+			if(i < 0 || (i16)this->rs.size() <= i) return nan;
 			else return this->rs[i];
 		}
 	};
