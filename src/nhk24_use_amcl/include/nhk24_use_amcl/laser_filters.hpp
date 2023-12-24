@@ -74,7 +74,7 @@ namespace nhk24_use_amcl::stew::laser_filters::impl {
 			if(const RTheta r_i_ = scan.nth_rtheta(i); !r_i_.is_nan()) {
 				const Vec2d r_i = r_i_.to_vec2d();
 				const Vec2d r_i_center = r_i - this->center;
-				return std::fabs(r_i_center.x) < this->size.x && std::fabs(r_i_center.y) < this->size.y ? r_i_.r : nan;
+				return std::fabs(r_i_center.x) < this->size.x && std::fabs(r_i_center.y) < this->size.y ? nan : r_i_.r;
 			}
 			return nan;
 		}
