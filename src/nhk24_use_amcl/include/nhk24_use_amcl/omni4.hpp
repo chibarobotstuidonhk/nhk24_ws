@@ -10,8 +10,8 @@
 #include <optional>
 
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/twist.hpp>
 
+#include <geometry_msgs/msg/twist.hpp>
 #include <can_plugins2/msg/frame.hpp>
 
 #include "logicool.hpp"
@@ -152,7 +152,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 			switch(state) {
 				case State::EmergencyStop:
 				{
-					// update(Twist2d{{0.0, 0.0}, 0.0}, dt);
+					update(Twist2d{{0.0, 0.0}, 0.0}, dt);
 					break;
 				}
 				
