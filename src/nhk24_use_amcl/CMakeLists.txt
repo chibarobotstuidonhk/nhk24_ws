@@ -110,7 +110,7 @@ rosidl_target_interfaces(path_loader_node
 )
 
 install(
-  TARGETS filter_node omni4_node pacman_node path_loader_node
+  TARGETS filter_node omni4_node pacman_node path_loader_node genbacat_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
