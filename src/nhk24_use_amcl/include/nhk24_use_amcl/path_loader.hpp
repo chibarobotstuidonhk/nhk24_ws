@@ -10,25 +10,37 @@
 #include <variant>
 
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/empty.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 #include <nhk24_use_amcl/msg/path.hpp>
 
 namespace nhk24_use_amcl::stew::path_loader {
 	struct PathLoader final : rclcpp::Node {
 		rclcpp::Publisher<nhk24_use_amcl::msg::Path>::SharedPtr path_pub;
-		rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr path_sub;
+		rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle;
 
 		PathLoader()
 		: rclcpp::Node("path_loader")
 		, path_pub(create_publisher<nhk24_use_amcl::msg::Path>("path", 10))
-		, path_sub(create_subscription<std_msgs::msg::Empty>("path_load", 10, std::bind(&PathLoader::path_load, this, std::placeholders::_1)))
+		, on_set_parameters_callback_handle (
+			this->add_on_set_parameters_callback (
+				[this](const std::vector<rclcpp::Parameter> & params) -> rcl_interfaces::msg::SetParametersResult {
+					for (const auto & param : params) {
+						if (param.get_name() == "path_file") {
+							if(const auto filepath = param.as_string(); filepath != "") path_load(filepath);
+						}
+					}
+
+					rcl_interfaces::msg::SetParametersResult result;
+					result.successful = true;
+					return result;
+				}
+			)
+		)
 		{
-			this->declare_parameter<std::string>("path_file", "path.txt");
+			this->declare_parameter<std::string>("path_file", "");
 		}
 
-		void path_load(const std_msgs::msg::Empty::SharedPtr) {
-			std::string path_file;
-			this->get_parameter("path_file", path_file);
+		void path_load(const std::string& path_file) {
 
 			std::ifstream ifs(path_file);
 			if (!ifs) {
