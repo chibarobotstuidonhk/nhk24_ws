@@ -29,4 +29,4 @@ angular:
   z: 0.0"
 
 # /scan, /map, frame: odom, Smth about robot joints, param: initial_pose -> /amcl_pose, TF2 transform map->odom
-# run_command "amcl" "ros2 run nav2_amcl amcl  --ros-args --log-level debug --params-file src/nhk24_use_amcl/launch/amcl.yaml"
+run_command "amcl" "ros2 run nav2_amcl amcl  --ros-args --log-level debug --params-file src/nhk24_use_amcl/launch/amcl.yaml"
