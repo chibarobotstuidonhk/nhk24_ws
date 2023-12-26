@@ -67,7 +67,7 @@ namespace nhk24_use_amcl::stew::path_loader {
 			else {
 				path.path.reserve(std::get<0>(*res));
 				path.goal_radius = std::get<1>(*res);
-				while(true) if(auto res = read_line.template operator()<double, double, double>(ifs, print_error); res) {
+				for(size_t i = 0; i < std::get<0>(*res); ++i) if(auto res = read_line.template operator()<double, double, double>(ifs, print_error); res) {
 					const auto [x, y, yaw] = std::move(*res);
 					
 					path.path.emplace_back();
