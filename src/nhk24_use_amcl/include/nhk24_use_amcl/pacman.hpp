@@ -105,18 +105,6 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			current_index = 0;
 		}
 
-		// void mcl_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-		// 	using Message = geometry_msgs::msg::PoseWithCovarianceStamped;
-		// 	using Out = tf2::WithCovarianceStamped<tf2::Transform>;
-			
-		// 	Out transform = MsgConvertor<Out, Message>::fromMsg(std::move(*msg));
-		// 	const auto v = transform.getOrigin();
-		// 	double roll, pitch, yaw;
-		// 	tf2::Matrix3x3{transform.getRotation()}.getRPY(roll, pitch, yaw);
-			
-		// 	current_pose = Twist2d{v.x(), v.y(), yaw};
-		// }
-
 		void timer_callback() {
 			constexpr double dt = 0.001;
 			constexpr auto take_subrange = [](size_t begin, size_t end) {
@@ -151,6 +139,16 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				
 				// update current_index
 				current_index = most_closest_index;
+
+				if((current_pose.linear - target_pose.linear).norm2() < goal_raius * goal_raius) {
+					msg::Result result{};
+					result.time = time;
+					result.is_goal_reached = true;
+					result_pub->publish(result);
+
+					this->path = std::nullopt;
+					return;
+				}
 
 				// calculate target twist
 				const Twist2d target_twist = pid_controller.update(target_pose - current_pose, dt);
