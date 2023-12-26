@@ -4,6 +4,3 @@
 [submodule "src/urg_node2"]
 	path = src/urg_node2
 	url = https://github.com/Stew-000-1-0-011/urg_node2.git
-[submodule "src/emcl2_ros2"]
-	path = src/emcl2_ros2
-	url = https://github.com/CIT-Autonomous-Robot-Lab/emcl2_ros2.git
