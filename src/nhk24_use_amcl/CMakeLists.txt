@@ -70,6 +70,19 @@ rosidl_target_interfaces(omni4_node
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
 )
 
+add_executable(genbacat_node
+  src/genbacat_node.cpp
+)
+ament_target_dependencies(genbacat_node
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  tf2_ros
+)
+rosidl_target_interfaces(genbacat_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+
 add_executable(pacman_node
   src/pacman.cpp
 )
