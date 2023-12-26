@@ -1,12 +1,6 @@
 [submodule "src/can_plugins2"]
 	path = src/can_plugins2
 	url = https://github.com/IndigoCarmine/can_plugins2.git
-[submodule "src/odom_check"]
-	path = src/odom_check
-	url = https://github.com/YUKICHI6105/odom_check.git
-[submodule "library/CRSLibtmp"]
-	path = library/CRSLibtmp
-	url = https://github.com/Stew-000-1-0-011/CRSLibtmp.git
 [submodule "src/urg_node2"]
 	path = src/urg_node2
 	url = https://github.com/Stew-000-1-0-011/urg_node2.git
