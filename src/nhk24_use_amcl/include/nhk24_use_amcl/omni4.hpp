@@ -98,7 +98,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 		/// @todo 以下の値を適切に設定する -> したつもり
 		static constexpr double center_to_wheel = 0.504;  // 中心から駆動輪までの距離[m](default: 実測値(雑)の504mm)
-		static constexpr double wheel_radius = 0.150;  // 駆動輪の半径[m](雑)
+		static constexpr double wheel_radius = 0.060;  // 駆動輪の半径[m](雑)
 		static constexpr double wheel_to_motor_ratio = 33.45;  // 駆動輪からモーターへの倍速比
 
 		State state{State::EmergencyStop};
