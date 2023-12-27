@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 #include <utility>
+#include <random>
 
 #include <rclcpp/rclcpp.hpp>
 #include<tf2_ros/transform_broadcaster.h>
@@ -18,6 +19,9 @@ namespace nhk24_use_amcl::stew::genbacat_node::impl {
 
 	struct GenbacatNode final : rclcpp::Node {
 		Twist2d current_twist{0, 0};
+		std::mt19937 engine{0};
+		std::normal_distribution<double> dist_xy{0.0, 0.01};
+		std::normal_distribution<double> dist_th{0.0, 0.07};
 
 		tf2_ros::TransformBroadcaster tf2_broadcaster;
 		rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr actual_cmd_vel_sub;
@@ -49,11 +53,14 @@ namespace nhk24_use_amcl::stew::genbacat_node::impl {
 					msg.header.frame_id = "odom";
 					msg.header.stamp = this->now();
 					msg.child_frame_id = "base_link";
-					msg.transform.translation.x = current_twist.linear.x;
-					msg.transform.translation.y = current_twist.linear.y;
+					// msg.transform.translation.x = current_twist.linear.x + this->dist_xy(this->engine);
+					// msg.transform.translation.y = current_twist.linear.y + this->dist_xy(this->engine);
+					msg.transform.translation.x = 0.0 + this->dist_xy(this->engine);
+					msg.transform.translation.y = 0.0 + this->dist_xy(this->engine);
 					msg.transform.translation.z = 0.0;
 					tf2::Quaternion q{};
-					q.setEuler(current_twist.angular, 0.0, 0.0);
+					// q.setRPY(0.0, 0.0, current_twist.angular + this->dist_th(this->engine));
+					q.setRPY(0.0, 0.0, 0.0 + this->dist_th(this->engine));
 					msg.transform.rotation = geometry_msgs_convertor::MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::toMsg(q);
 					this->tf2_broadcaster.sendTransform(std::move(msg));
 			})}
