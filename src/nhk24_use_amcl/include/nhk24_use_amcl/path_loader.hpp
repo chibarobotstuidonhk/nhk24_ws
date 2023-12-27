@@ -50,7 +50,9 @@ namespace nhk24_use_amcl::stew::path_loader {
 
 			constexpr auto read_line = []<class ... T>(auto& ifs, const auto& error_handler) -> std::optional<std::tuple<T ...>> {
 				std::string line{};
-				if(!std::getline(ifs, line)) return {std::nullopt};
+				while(line == "") {
+					if(!std::getline(ifs, line)) return {std::nullopt};
+				}
 				
 				std::istringstream iss(line);
 				std::tuple<T ...> ret{};
