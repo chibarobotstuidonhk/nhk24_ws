@@ -151,7 +151,9 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				}
 
 				// calculate target twist
+				RCLCPP_INFO_STREAM(this->get_logger(), target_pose.linear.x << " " << target_pose.linear.y << " " << target_pose.angular);
 				const Twist2d target_twist = pid_controller.update(target_pose - current_pose, dt);
+				RCLCPP_INFO_STREAM(this->get_logger(), target_twist.linear.x << " " << target_twist.linear.y << " " << target_twist.angular);
 				// convert target_twist to local one
 				const auto [local_x, local_y] = rot(target_twist.linear, -current_pose.angular);
 				// publish cmd_vel
