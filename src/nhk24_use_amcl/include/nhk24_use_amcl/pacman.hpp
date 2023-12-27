@@ -53,7 +53,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 		PacMan(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
 			: rclcpp::Node("pacman", options)
 			, path(std::nullopt)
-			, pid_controller{pid::Pid<Twist2d, double>::make(1.0, 0.0, 0.0)}
+			, pid_controller{pid::Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
 			, lookahead{10}
 			, lookback{10}
 			, step{5}
@@ -68,6 +68,8 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			this->declare_parameter<double>("k_p", pid_controller.k_p);
 			this->declare_parameter<double>("k_i", pid_controller.k_i);
 			this->declare_parameter<double>("k_d", pid_controller.k_d);
+			this->declare_parameter<double>("max_integral_xy", pid_controller.max_integral.linear.x);
+			this->declare_parameter<double>("max_integral_th", pid_controller.max_integral.angular);
 			this->declare_parameter<int>("lookahead", lookahead);
 			this->declare_parameter<int>("lookback", lookback);
 			this->declare_parameter<int>("step", step);
@@ -78,7 +80,14 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			pid_controller = pid::Pid<Twist2d, double>::make(
 				this->get_parameter("k_p").as_double(),
 				this->get_parameter("k_i").as_double(),
-				this->get_parameter("k_d").as_double()
+				this->get_parameter("k_d").as_double(),
+				Twist2d {
+					Vec2d {
+						this->get_parameter("max_integral_xy").as_double(),
+						this->get_parameter("max_integral_xy").as_double()
+					},
+					this->get_parameter("max_integral_th").as_double()
+				}
 			);
 			lookahead = this->get_parameter("lookahead").as_int();
 			lookback = this->get_parameter("lookback").as_int();
@@ -156,6 +165,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				RCLCPP_INFO_STREAM(this->get_logger(), target_twist.linear.x << " " << target_twist.linear.y << " " << target_twist.angular);
 				// convert target_twist to local one
 				const auto [local_x, local_y] = rot(target_twist.linear, -current_pose.angular);
+				RCLCPP_INFO_STREAM(this->get_logger(), local_x << " " << local_y);
 				// publish cmd_vel
 				geometry_msgs::msg::Twist msg{};
 				msg.linear.x = local_x;
