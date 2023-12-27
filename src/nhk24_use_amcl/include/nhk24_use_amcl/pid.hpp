@@ -27,20 +27,22 @@ namespace nhk24_use_amcl::stew::pid {
 	template<class ValueT, class GainT = ValueT>
 	requires linear_algebra<GainT, ValueT>
 	struct Pid final {
-		GainT k_p{1};
-		GainT k_i{0};
-		GainT k_d{0};
+		GainT k_p;
+		GainT k_i;
+		GainT k_d;
 
-		ValueT integral{};
-		ValueT derivative{};
+		ValueT max_integral;
+		ValueT integral;
+		ValueT last_error;
 
-		static auto make(GainT k_p, GainT k_i, GainT k_d) {
-			return Pid{k_p, k_i, k_d};
+		static auto make(GainT k_p, GainT k_i, GainT k_d, ValueT max_integral) {
+			return Pid{k_p, k_i, k_d, max_integral, {}, {}};
 		}
 
 		auto update(ValueT error, GainT dt) noexcept {
 			integral = integral + error * dt;
-			derivative = (error - derivative) / dt;
+			const auto derivative = (error - last_error) / dt;
+			last_error = error;
 			return k_p * error + k_i * integral + k_d * derivative;
 		}
 	};
