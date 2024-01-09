@@ -63,7 +63,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			, cmd_vel_pub(this->create_publisher<geometry_msgs::msg::Twist>("body_twist", 1))
 			, result_pub(this->create_publisher<nhk24_use_amcl::msg::Result>("result", 10))
 			, path_sub(this->create_subscription<msg::Path>("path", 10, std::bind(&PacMan::path_callback, this, std::placeholders::_1)))
-			, timer(this->create_wall_timer(1ms, std::bind(&PacMan::timer_callback, this)))
+			, timer(this->create_wall_timer(10ms, std::bind(&PacMan::timer_callback, this)))
 		{
 			this->declare_parameter<double>("k_p", pid_controller.k_p);
 			this->declare_parameter<double>("k_i", pid_controller.k_i);
