@@ -1,3 +1,12 @@
+/**
+ * @file pacman.hpp
+ * @brief 軌道追従を行う。
+ * 
+ * 設計が悪い。ros2のparameterにしている部分はmsg::Pathに含めてしまうべきだった。
+ * また、追従と停止しかしないにせよ、状態をvariantで表現するべきだった。
+ * enum State{PathTracing(msg::Path), Stopped(Twist2d)}; みたいに。
+ */
+
 #pragma once
 
 #include <vector>
