@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <optional>
+#include <variant>
 #include <functional>
 #include <utility>
 #include <chrono>
@@ -43,7 +44,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 
 	struct PacMan final : rclcpp::Node {
 		private:
-		std::optional<msg::Path> path;
+		std::variant<std::monostate, msg::Path, Twist2d> path;
 		pid::Pid<Twist2d, double> pid_controller;
 		uint32_t lookahead;
 		uint32_t lookback;
@@ -61,7 +62,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 		public:
 		PacMan(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
 			: rclcpp::Node("pacman", options)
-			, path(std::nullopt)
+			, path()
 			, pid_controller{pid::Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
 			, lookahead{10}
 			, lookback{10}
@@ -104,16 +105,16 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 		}
 
 		void path_callback(const msg::Path::SharedPtr msg) {
-			if(path.has_value()) {
+			if(const auto path_p = std::get_if<msg::Path>(&path); path_p) {
 				msg::Result result{};
-				result.time = std::move(path->time);
+				result.time = std::move(path_p->time);
 				result.is_goal_reached = false;
 				result_pub->publish(result);
 			}
 
 			if(msg->path.size() == 0) {
 				RCLCPP_ERROR(this->get_logger(), "empty path has been subscribed.");
-				path = std::nullopt;
+				path = std::monostate{};
 			}
 
 			// no matter whether path is empty or not, refresh parameters on every path_callback
@@ -129,43 +130,49 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				return std::ranges::views::drop(begin) | std::ranges::views::take(end - begin);
 			};
 
-			if(!path.has_value()) return;
-
-			const auto& [time, path, goal_raius] = *this->path;
 			if(const auto current_pose_ = get_current_pose(); current_pose_) {
 				const auto current_pose = *current_pose_;
 
-				// get target_pose
-				auto target_pose = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[std::min<u32>(current_index + step, path.size() - 1)]);
-
-				// update current_index to the most closest point in looking subrange
-				constexpr auto cast_to_twist2d = std::ranges::views::transform(Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>);
-				const u32 begin = std::max((i32)current_index - (i32)lookback, 0);
-				const u32 end = std::min<u32>(current_index + lookahead, path.size());
-
-				u32 most_closest_index = begin;
-				double most_closest_distance = std::numeric_limits<double>::max();
-				for(size_t i = 0; const Twist2d& pose : path | take_subrange(begin, end) | cast_to_twist2d) {
-					const double distance = (pose.linear - current_pose.linear).norm2();
-					if(distance < most_closest_distance) {
-						most_closest_index = i;
-						most_closest_distance = distance;
-					}
-
-					++i;
+				Twist2d target_pose = {};
+				if(std::get_if<std::monostate>(&path)) return;
+				else if(const auto twist_p = std::get_if<Twist2d>(&path); twist_p) {
+					target_pose = *twist_p;
 				}
-				
-				// update current_index
-				current_index = most_closest_index;
+				else {
+					const auto& [time, path, goal_raius] = std::get<msg::Path>(this->path);
+					
+					// get target_pose
+					target_pose = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[std::min<u32>(current_index + step, path.size() - 1)]);
 
-				if((current_pose.linear - target_pose.linear).norm2() < goal_raius * goal_raius) {
-					msg::Result result{};
-					result.time = time;
-					result.is_goal_reached = true;
-					result_pub->publish(result);
+					// update current_index to the most closest point in looking subrange
+					constexpr auto cast_to_twist2d = std::ranges::views::transform(Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>);
+					const u32 begin = std::max((i32)current_index - (i32)lookback, 0);
+					const u32 end = std::min<u32>(current_index + lookahead, path.size());
 
-					this->path = std::nullopt;
-					return;
+					u32 most_closest_index = begin;
+					double most_closest_distance = std::numeric_limits<double>::max();
+					for(size_t i = 0; const Twist2d& pose : path | take_subrange(begin, end) | cast_to_twist2d) {
+						const double distance = (pose.linear - current_pose.linear).norm2();
+						if(distance < most_closest_distance) {
+							most_closest_index = i;
+							most_closest_distance = distance;
+						}
+
+						++i;
+					}
+					
+					// update current_index
+					current_index = most_closest_index;
+
+					if((current_pose.linear - Vec2d::from_msg<nhk24_use_amcl::msg::Vec2d>(path[0].linear)).norm2() < goal_raius * goal_raius) {
+						msg::Result result{};
+						result.time = time;
+						result.is_goal_reached = true;
+						result_pub->publish(result);
+
+						this->path = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[0]);
+						return;
+					}
 				}
 
 				// calculate target twist
