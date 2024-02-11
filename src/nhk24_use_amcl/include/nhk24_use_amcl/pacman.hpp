@@ -64,9 +64,9 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			: rclcpp::Node("pacman", options)
 			, path()
 			, pid_controller{pid::Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
-			, lookahead{10}
-			, lookback{10}
-			, step{5}
+			, lookahead{1}
+			, lookback{0}
+			, step{1}
 			, current_index{0}
 			, tf2_buffer{this->get_clock()}
 			, tf2_listener{tf2_buffer}
@@ -139,6 +139,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					target_pose = *twist_p;
 				}
 				else {
+					RCLCPP_INFO_STREAM(this->get_logger(), "current_index: " << current_index);
 					const auto& [time, path, goal_raius] = std::get<msg::Path>(this->path);
 					
 					// get target_pose
@@ -147,11 +148,11 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					// update current_index to the most closest point in looking subrange
 					constexpr auto cast_to_twist2d = std::ranges::views::transform(Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>);
 					const u32 begin = std::max((i32)current_index - (i32)lookback, 0);
-					const u32 end = std::min<u32>(current_index + lookahead, path.size());
+					const u32 end = std::min<u32>(current_index + lookahead + 1, path.size());
 
 					u32 most_closest_index = begin;
 					double most_closest_distance = std::numeric_limits<double>::max();
-					for(size_t i = 0; const Twist2d& pose : path | take_subrange(begin, end) | cast_to_twist2d) {
+					for(size_t i = begin; const Twist2d& pose : path | take_subrange(begin, end) | cast_to_twist2d) {
 						const double distance = (pose.linear - current_pose.linear).norm2();
 						if(distance < most_closest_distance) {
 							most_closest_index = i;
@@ -164,24 +165,25 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					// update current_index
 					current_index = most_closest_index;
 
-					if((current_pose.linear - Vec2d::from_msg<nhk24_use_amcl::msg::Vec2d>(path[0].linear)).norm2() < goal_raius * goal_raius) {
+					// if((current_pose.linear - Vec2d::from_msg<nhk24_use_amcl::msg::Vec2d>(path[0].linear)).norm2() < goal_raius * goal_raius) {
+					if(current_index == path.size() - 1) {
 						msg::Result result{};
 						result.time = time;
 						result.is_goal_reached = true;
 						result_pub->publish(result);
 
 						this->path = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[0]);
+						
+						RCLCPP_INFO_STREAM(this->get_logger(), "GOAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 						return;
 					}
 				}
 
 				// calculate target twist
-				RCLCPP_INFO_STREAM(this->get_logger(), target_pose.linear.x << " " << target_pose.linear.y << " " << target_pose.angular);
 				const Twist2d target_twist = pid_controller.update(target_pose - current_pose, dt);
-				RCLCPP_INFO_STREAM(this->get_logger(), target_twist.linear.x << " " << target_twist.linear.y << " " << target_twist.angular);
 				// convert target_twist to local one
 				const auto [local_x, local_y] = rot(target_twist.linear, -current_pose.angular);
-				RCLCPP_INFO_STREAM(this->get_logger(), local_x << " " << local_y);
+				
 				// publish cmd_vel
 				geometry_msgs::msg::Twist msg{};
 				msg.linear.x = local_x;
