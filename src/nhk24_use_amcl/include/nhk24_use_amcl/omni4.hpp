@@ -36,8 +36,8 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 	struct MotorSpeedFixer final {
 		/// @todo 以下の値を適切に設定する -> したつもり
-		static constexpr double max_velocity = 500.0;  // 最大速度[rad/s]
-		static constexpr double max_acceleration = 500.0;  // 最大加速度[rad/s^2]
+		static constexpr double max_velocity = 500.0 * 0.5;  // 最大速度[rad/s]
+		static constexpr double max_acceleration = 500.0 * 0.3;  // 最大加速度[rad/s^2]
 
 		double last_speed{0.0};
 
@@ -59,9 +59,9 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 	struct BodySpeedFixer final {
 		/// @todo 以下の値を適切に設定する -> したつもり
-		static constexpr double max_linear = 1.0;  // 最大速度[m/s]
-		static constexpr double max_angular = std::numbers::pi / 3.0;  // 最大角速度[rad/s]
-		static constexpr double max_linear_acceleration = 1.0;  // 最大加速度[m/s^2]
+		static constexpr double max_linear = 1.0 * 0.3;  // 最大速度[m/s]
+		static constexpr double max_angular = std::numbers::pi / 3.0 * 0.3;  // 最大角速度[rad/s]
+		static constexpr double max_linear_acceleration = 1.0 * 0.1;  // 最大加速度[m/s^2]
 
 		Twist2d last_twist{{0.0, 0.0}, 0.0};
 
