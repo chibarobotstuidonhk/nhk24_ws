@@ -4,7 +4,7 @@
             "name": "ROS",
             "includePath": [
                 "./install/can_plugins2/include/can_plugins2",
-                "src/nhk24_utils/include/nhk24_utils",
+                "src/nhk24_utils/include",
                 "./install/nhk24_utils/include/nhk24_utils",
                 "./src/nhk24_use_amcl/include",
                 "/opt/ros/humble/include/*/"
