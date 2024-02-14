@@ -29,6 +29,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"msg/Path.msg"
 	"msg/Result.msg"
 	"msg/FilterParam.msg"
+	"msg/Ball.msg"
+	"msg/Balls.msg"
 	DEPENDENCIES builtin_interfaces
 )
 
