@@ -5,9 +5,9 @@
 #include <concepts>
 #include <compare>
 
-#include <nhk24_use_amcl/msg/vec2d.hpp>
+#include <nhk24_utils/msg/vec2d.hpp>
 
-namespace nhk24_use_amcl::stew::vec2d {
+namespace nhk24_utils::stew::vec2d {
 	template<class T>
 	struct Vec2d_ final {
 		T x{0.0};
@@ -86,7 +86,7 @@ namespace nhk24_use_amcl::stew::vec2d {
 
 		template<class M>
 		static auto from_msg(const std::type_identity_t<M>& msg) noexcept -> Vec2d_ {
-			if constexpr(std::same_as<M, nhk24_use_amcl::msg::Vec2d>) {
+			if constexpr(std::same_as<M, nhk24_utils::msg::Vec2d>) {
 				return Vec2d_{msg.x, msg.y};
 			}
 			else {
@@ -96,8 +96,8 @@ namespace nhk24_use_amcl::stew::vec2d {
 
 		template<class M>
 		auto to_msg() const noexcept -> std::type_identity_t<M> {
-			if constexpr(std::same_as<M, nhk24_use_amcl::msg::Vec2d>) {
-				nhk24_use_amcl::msg::Vec2d msg{};
+			if constexpr(std::same_as<M, nhk24_utils::msg::Vec2d>) {
+				nhk24_utils::msg::Vec2d msg{};
 				msg.x = x;
 				msg.y = y;
 				return msg;

@@ -26,26 +26,27 @@
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <nhk24_use_amcl/msg/path.hpp>
-#include <nhk24_use_amcl/msg/result.hpp>
+#include <nhk24_utils/msg/path.hpp>
+#include <nhk24_utils/msg/result.hpp>
 
-#include "std_type.hpp"
-#include "vec2d.hpp"
-#include "twist2d.hpp"
-#include "pid.hpp"
-#include "geometry_msgs_convertor.hpp"
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/twist2d.hpp>
+#include <nhk24_utils/pid.hpp>
+#include <nhk24_utils/geometry_msgs_convertor.hpp>
 
 namespace nhk24_use_amcl::stew::pacman::impl {
 	using namespace std::chrono_literals;
 	using namespace crs_lib::integer_types;
-	using vec2d::Vec2d;
-	using twist2d::Twist2d;
-	using geometry_msgs_convertor::MsgConvertor;
+	using nhk24_utils::stew::vec2d::Vec2d;
+	using nhk24_utils::stew::twist2d::Twist2d;
+	using nhk24_utils::stew::geometry_msgs_convertor::MsgConvertor;
+	using nhk24_utils::stew::pid::Pid;
 
 	struct PacMan final : rclcpp::Node {
 		private:
-		std::variant<std::monostate, msg::Path, Twist2d> path;
-		pid::Pid<Twist2d, double> pid_controller;
+		std::variant<std::monostate, nhk24_utils::msg::Path, Twist2d> path;
+		Pid<Twist2d, double> pid_controller;
 		uint32_t lookahead;
 		uint32_t lookback;
 		uint32_t step;
@@ -55,15 +56,15 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 		tf2_ros::TransformListener tf2_listener;
 
 		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
-		rclcpp::Publisher<nhk24_use_amcl::msg::Result>::SharedPtr result_pub;
-		rclcpp::Subscription<msg::Path>::SharedPtr path_sub;
+		rclcpp::Publisher<nhk24_utils::msg::Result>::SharedPtr result_pub;
+		rclcpp::Subscription<nhk24_utils::msg::Path>::SharedPtr path_sub;
 		rclcpp::TimerBase::SharedPtr timer;
 
 		public:
 		PacMan(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
 			: rclcpp::Node("pacman", options)
 			, path()
-			, pid_controller{pid::Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
+			, pid_controller{Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
 			, lookahead{1}
 			, lookback{0}
 			, step{1}
@@ -71,8 +72,8 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			, tf2_buffer{this->get_clock()}
 			, tf2_listener{tf2_buffer}
 			, cmd_vel_pub(this->create_publisher<geometry_msgs::msg::Twist>("body_twist", 1))
-			, result_pub(this->create_publisher<nhk24_use_amcl::msg::Result>("result", 10))
-			, path_sub(this->create_subscription<msg::Path>("path", 10, std::bind(&PacMan::path_callback, this, std::placeholders::_1)))
+			, result_pub(this->create_publisher<nhk24_utils::msg::Result>("result", 10))
+			, path_sub(this->create_subscription<nhk24_utils::msg::Path>("path", 10, std::bind(&PacMan::path_callback, this, std::placeholders::_1)))
 			, timer(this->create_wall_timer(10ms, std::bind(&PacMan::timer_callback, this)))
 		{
 			this->declare_parameter<double>("k_p", pid_controller.k_p);
@@ -87,7 +88,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 
 		private:
 		void refresh_parameters() {
-			pid_controller = pid::Pid<Twist2d, double>::make(
+			pid_controller = Pid<Twist2d, double>::make(
 				this->get_parameter("k_p").as_double(),
 				this->get_parameter("k_i").as_double(),
 				this->get_parameter("k_d").as_double(),
@@ -104,9 +105,9 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			step = this->get_parameter("step").as_int();
 		}
 
-		void path_callback(const msg::Path::SharedPtr msg) {
-			if(const auto path_p = std::get_if<msg::Path>(&path); path_p) {
-				msg::Result result{};
+		void path_callback(const nhk24_utils::msg::Path::SharedPtr msg) {
+			if(const auto path_p = std::get_if<nhk24_utils::msg::Path>(&path); path_p) {
+				nhk24_utils::msg::Result result{};
 				result.time = std::move(path_p->time);
 				result.is_goal_reached = false;
 				result_pub->publish(result);
@@ -140,13 +141,13 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				}
 				else {
 					RCLCPP_INFO_STREAM(this->get_logger(), "current_index: " << current_index);
-					const auto& [time, path, goal_raius] = std::get<msg::Path>(this->path);
+					const auto& [time, path, goal_raius] = std::get<nhk24_utils::msg::Path>(this->path);
 					
 					// get target_pose
-					target_pose = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[std::min<u32>(current_index + step, path.size() - 1)]);
+					target_pose = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(path[std::min<u32>(current_index + step, path.size() - 1)]);
 
 					// update current_index to the most closest point in looking subrange
-					constexpr auto cast_to_twist2d = std::ranges::views::transform(Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>);
+					constexpr auto cast_to_twist2d = std::ranges::views::transform(Twist2d::from_msg<nhk24_utils::msg::Twist2d>);
 					const u32 begin = std::max((i32)current_index - (i32)lookback, 0);
 					const u32 end = std::min<u32>(current_index + lookahead + 1, path.size());
 
@@ -165,14 +166,14 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					// update current_index
 					current_index = most_closest_index;
 
-					// if((current_pose.linear - Vec2d::from_msg<nhk24_use_amcl::msg::Vec2d>(path[0].linear)).norm2() < goal_raius * goal_raius) {
+					// if((current_pose.linear - Vec2d::from_msg<nhk24_utils::msg::Vec2d>(path[0].linear)).norm2() < goal_raius * goal_raius) {
 					if(current_index == path.size() - 1) {
-						msg::Result result{};
+						nhk24_utils::msg::Result result{};
 						result.time = time;
 						result.is_goal_reached = true;
 						result_pub->publish(result);
 
-						this->path = Twist2d::from_msg<nhk24_use_amcl::msg::Twist2d>(path[0]);
+						this->path = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(path[0]);
 						
 						RCLCPP_INFO_STREAM(this->get_logger(), "GOAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 						return;
@@ -198,7 +199,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				const auto transform = tf2_buffer.lookupTransform("map", "base_link", tf2::TimePointZero).transform;
 				const auto v = transform.translation;
 				double roll, pitch, yaw;
-				tf2::Matrix3x3{geometry_msgs_convertor::MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::fromMsg(transform.rotation)}
+				tf2::Matrix3x3{MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::fromMsg(transform.rotation)}
 					.getRPY(roll, pitch, yaw);
 				return Twist2d{v.x, v.y, yaw};
 			

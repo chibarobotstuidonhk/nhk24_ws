@@ -6,9 +6,9 @@
 #include "vec2d.hpp"
 
 #include <geometry_msgs/msg/twist.hpp>
-#include <nhk24_use_amcl/msg/twist2d.hpp>
+#include <nhk24_utils/msg/twist2d.hpp>
 
-namespace nhk24_use_amcl::stew::twist2d {
+namespace nhk24_utils::stew::twist2d {
 	struct Twist2d final {
 		vec2d::Vec2d linear{0.0, 0.0};
 		double angular{0.0};
@@ -73,7 +73,7 @@ namespace nhk24_use_amcl::stew::twist2d {
 			if constexpr(std::same_as<M, geometry_msgs::msg::Twist>) {
 				return Twist2d{vec2d::Vec2d{msg.linear.x, msg.linear.y}, msg.angular.z};
 			}
-			else if constexpr(std::same_as<M, nhk24_use_amcl::msg::Twist2d>) {
+			else if constexpr(std::same_as<M, nhk24_utils::msg::Twist2d>) {
 				return Twist2d{vec2d::Vec2d{msg.linear.x, msg.linear.y}, msg.angular};
 			}
 			else {
@@ -90,7 +90,7 @@ namespace nhk24_use_amcl::stew::twist2d {
 				msg.angular.z = angular;
 				return msg;
 			}
-			else if constexpr(std::same_as<M, nhk24_use_amcl::msg::Twist2d>) {
+			else if constexpr(std::same_as<M, nhk24_utils::msg::Twist2d>) {
 				M msg{};
 				msg.linear.x = linear.x;
 				msg.linear.y = linear.y;

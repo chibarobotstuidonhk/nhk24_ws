@@ -8,14 +8,15 @@
 
 #include <geometry_msgs/msg/twist.hpp>
 
-#include "std_type.hpp"
-#include "twist2d.hpp"
-#include "geometry_msgs_convertor.hpp"
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/twist2d.hpp>
+#include <nhk24_utils/geometry_msgs_convertor.hpp>
 
 namespace nhk24_use_amcl::stew::genbacat_node::impl {
 	using namespace std::chrono_literals;
 	using namespace crs_lib::integer_types;
-	using twist2d::Twist2d;
+	using nhk24_utils::stew::twist2d::Twist2d;
+	using nhk24_utils::stew::geometry_msgs_convertor::MsgConvertor;
 
 	struct GenbacatNode final : rclcpp::Node {
 		Twist2d current_twist{0, 0};
@@ -61,7 +62,7 @@ namespace nhk24_use_amcl::stew::genbacat_node::impl {
 					tf2::Quaternion q{};
 					// q.setRPY(0.0, 0.0, current_twist.angular + this->dist_th(this->engine));
 					q.setRPY(0.0, 0.0, 0.0 + this->dist_th(this->engine));
-					msg.transform.rotation = geometry_msgs_convertor::MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::toMsg(q);
+					msg.transform.rotation = MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::toMsg(q);
 					this->tf2_broadcaster.sendTransform(std::move(msg));
 			})}
 		{}

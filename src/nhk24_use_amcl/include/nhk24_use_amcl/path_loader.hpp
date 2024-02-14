@@ -11,16 +11,16 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
-#include <nhk24_use_amcl/msg/path.hpp>
+#include <nhk24_utils/msg/path.hpp>
 
 namespace nhk24_use_amcl::stew::path_loader {
 	struct PathLoader final : rclcpp::Node {
-		rclcpp::Publisher<nhk24_use_amcl::msg::Path>::SharedPtr path_pub;
+		rclcpp::Publisher<nhk24_utils::msg::Path>::SharedPtr path_pub;
 		rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle;
 
 		PathLoader()
 		: rclcpp::Node("path_loader")
-		, path_pub(create_publisher<nhk24_use_amcl::msg::Path>("path", 10))
+		, path_pub(create_publisher<nhk24_utils::msg::Path>("path", 10))
 		, on_set_parameters_callback_handle (
 			this->add_on_set_parameters_callback (
 				[this](const std::vector<rclcpp::Parameter> & params) -> rcl_interfaces::msg::SetParametersResult {
@@ -74,7 +74,7 @@ namespace nhk24_use_amcl::stew::path_loader {
 				RCLCPP_ERROR(this->get_logger(), "Failed to parse path line: %s", err.c_str());
 			};
 
-			nhk24_use_amcl::msg::Path path{};
+			nhk24_utils::msg::Path path{};
 			if (auto res = read_line.template operator()<size_t, double>(ifs, print_error); !res) {
 				RCLCPP_ERROR(this->get_logger(), "Failed to parse path file: It is empty.");
 			}

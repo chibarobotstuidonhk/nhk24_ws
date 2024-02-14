@@ -55,7 +55,7 @@
 #include "tf2/LinearMath/Vector3.h"
 #include "tf2_ros/buffer_interface.h"
 
-namespace nhk24_use_amcl::stew::geometry_msgs_convertor::impl
+namespace nhk24_utils::stew::geometry_msgs_convertor::impl
 {
 	template<class Out, class Message>
 	#ifdef __cpp_concepts
@@ -328,7 +328,7 @@ namespace nhk24_use_amcl::stew::geometry_msgs_convertor::impl
 	};
 }
 
-namespace nhk24_use_amcl::stew::geometry_msgs_convertor {
+namespace nhk24_utils::stew::geometry_msgs_convertor {
 	using impl::MsgConvertor;
 }
 

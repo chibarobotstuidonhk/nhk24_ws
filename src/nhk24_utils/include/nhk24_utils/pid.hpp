@@ -1,6 +1,6 @@
 #pragma once
 
-namespace nhk24_use_amcl::stew::pid {
+namespace nhk24_utils::stew::pid {
 
 	template<class T>
 	concept additive = requires(T a, T b) {

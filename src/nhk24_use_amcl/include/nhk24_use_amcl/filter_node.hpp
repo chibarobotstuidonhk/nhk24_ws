@@ -6,18 +6,18 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <nhk24_use_amcl/msg/filter_param.hpp>
+#include <nhk24_utils/msg/filter_param.hpp>
 
-#include "std_type.hpp"
-#include "vec2d.hpp"
-#include "scan.hpp"
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/scan.hpp>
 #include "laser_filters.hpp"
 #include "segment_line.hpp"
 
 namespace nhk24_use_amcl::stew::filter_node::impl {
 	using namespace crs_lib::integer_types;
-	using Vec2d = vec2d::Vec2d_<float>;
-	using Scan = scan::Scan;
+	using Vec2d = nhk24_utils::stew::vec2d::Vec2d_<float>;
+	using nhk24_utils::stew::scan::Scan;
 	using laser_filters::filter_chain;
 	using laser_filters::ShadowFilter;
 	using laser_filters::BoxFilter;
@@ -28,7 +28,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 		rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_scan;
 		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_marker;
 		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub_scan;
-		rclcpp::Subscription<nhk24_use_amcl::msg::FilterParam>::SharedPtr sub_filter_param;
+		rclcpp::Subscription<nhk24_utils::msg::FilterParam>::SharedPtr sub_filter_param;
 		u16 seg_window;
 		float seg_threshold;
 		Vec2d base_to_lidar;
@@ -37,11 +37,11 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 		u16 shadow_filter_window;
 
 		FilterNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
-			: Node("nhk24_0th_filter_node", options)
+			: Node("nhk24_1st_filter_node", options)
 			, pub_scan(create_publisher<sensor_msgs::msg::LaserScan>("scan", 10))
 			, pub_marker(create_publisher<visualization_msgs::msg::Marker>("segment_line", 10))
 			, sub_scan(create_subscription<sensor_msgs::msg::LaserScan>("scan_nonfiltered", 10, std::bind(&FilterNode::scan_callback, this, std::placeholders::_1)))
-			, sub_filter_param(create_subscription<nhk24_use_amcl::msg::FilterParam>("filter_param", 10, std::bind(&FilterNode::callback_filter_param, this, std::placeholders::_1)))
+			, sub_filter_param(create_subscription<nhk24_utils::msg::FilterParam>("filter_param", 10, std::bind(&FilterNode::callback_filter_param, this, std::placeholders::_1)))
 			, seg_window(10)
 			, seg_threshold(0.100f)
 			, base_to_lidar(0.010, -0.040)
@@ -75,7 +75,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			pub_scan->publish(filtered_msg);
 		}
 
-		void callback_filter_param(const nhk24_use_amcl::msg::FilterParam::SharedPtr msg)
+		void callback_filter_param(const nhk24_utils::msg::FilterParam::SharedPtr msg)
 		{
 			if(msg->seg_window != 0) seg_window = msg->seg_window;
 			if(msg->seg_threshold != 0.0) seg_threshold = msg->seg_threshold;

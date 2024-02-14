@@ -3,16 +3,16 @@
 #include <vector>
 #include <tuple>
 #include <utility>
-#include "std_type.hpp"
-#include "vec2d.hpp"
-#include "scan.hpp"
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/scan.hpp>
 
 namespace nhk24_use_amcl::stew::laser_filters::impl {
 	using namespace crs_lib::integer_types;
-	using Vec2d = vec2d::Vec2d_<float>;
-	using Scan = scan::Scan;
-	using RTheta = scan::RTheta;
-	using scan::nan;
+	using Vec2d = nhk24_utils::stew::vec2d::Vec2d_<float>;
+	using nhk24_utils::stew::scan::Scan;
+	using nhk24_utils::stew::scan::RTheta;
+	using nhk24_utils::stew::scan::nan;
 
 	template<class ... Filters>
 	inline constexpr auto filter_chain(Filters&& ... filters) noexcept {

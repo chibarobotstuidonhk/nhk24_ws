@@ -5,7 +5,7 @@
 
 #include <can_plugins2/msg/frame.hpp>
 
-#include "std_type.hpp"
+#include <nhk24_utils/std_type.hpp>
 
 namespace nhk24_use_amcl::stew::shirasu::impl {
 	using namespace crs_lib::integer_types;

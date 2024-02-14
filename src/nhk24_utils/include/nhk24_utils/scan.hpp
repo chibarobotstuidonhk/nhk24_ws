@@ -9,7 +9,7 @@
 
 #include <sensor_msgs/msg/laser_scan.hpp>
 
-namespace nhk24_use_amcl::stew::scan::impl {
+namespace nhk24_utils::stew::scan::impl {
 	using namespace crs_lib::integer_types;
 	using Vec2d = vec2d::Vec2d_<float>;
 
@@ -69,7 +69,7 @@ namespace nhk24_use_amcl::stew::scan::impl {
 	};
 }
 
-namespace nhk24_use_amcl::stew::scan {
+namespace nhk24_utils::stew::scan {
 	using impl::RTheta;
 	using impl::Scan;
 	using impl::nan;

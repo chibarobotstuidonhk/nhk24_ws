@@ -2,16 +2,15 @@
 
 #include <vector>
 #include <utility>
-#include "std_type.hpp"
-#include "vec2d.hpp"
-#include "scan.hpp"
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/scan.hpp>
 
 namespace nhk24_use_amcl::stew::segment_line::impl {
 	using namespace crs_lib::integer_types;
-	using Vec2d = vec2d::Vec2d_<float>;
-	using Scan = scan::impl::Scan;
-	using RTheta = scan::impl::RTheta;
-
+	using Vec2d = nhk24_utils::stew::vec2d::Vec2d_<float>;
+	using nhk24_utils::stew::scan::Scan;
+	using nhk24_utils::stew::scan::RTheta;
 
 	struct SegmentLine final {
 		std::vector<u16> indices;

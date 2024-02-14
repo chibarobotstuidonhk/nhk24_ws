@@ -14,10 +14,10 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <can_plugins2/msg/frame.hpp>
 
-#include "logicool.hpp"
-#include "std_type.hpp"
-#include "vec2d.hpp"
-#include "twist2d.hpp"
+#include <nhk24_utils/logicool.hpp>
+#include <nhk24_utils/std_type.hpp>
+#include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/twist2d.hpp>
 #include "shirasu.hpp"
 
 namespace nhk24_use_amcl::stew::omni4::impl {
@@ -25,8 +25,8 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 	using namespace crs_lib::integer_types;
 	using crs_lib::ros2::logicool::Logicool;
 	
-	using nhk24_use_amcl::stew::vec2d::Vec2d;
-	using nhk24_use_amcl::stew::twist2d::Twist2d;
+	using nhk24_utils::stew::vec2d::Vec2d;
+	using nhk24_utils::stew::twist2d::Twist2d;
 
 	enum class State : u8 {
 		EmergencyStop,
@@ -116,7 +116,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 		public:
 		Omni4(const rclcpp::NodeOptions& options = rclcpp::NodeOptions{})
-			: Node("nhk24_0th_omni4", options),
+			: Node("nhk24_1st_omni4", options),
 			can_pub(create_publisher<can_plugins2::msg::Frame>("can_tx", 10)),
 			cmd_vel_pub(create_publisher<geometry_msgs::msg::Twist>("actual_cmd_vel", 1)),
 			logicool{*this, "joy", {}, 10}

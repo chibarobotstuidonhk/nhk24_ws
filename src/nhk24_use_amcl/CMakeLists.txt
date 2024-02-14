@@ -17,8 +17,6 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -26,21 +24,11 @@ find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(can_plugins2 REQUIRED)
+find_package(nhk24_utils REQUIRED)
 
 include_directories(
   include
 )
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Vec2d.msg"
-  "msg/Twist2d.msg"
-  "msg/Path.msg"
-  "msg/Result.msg"
-  "msg/FilterParam.msg"
-  DEPENDENCIES builtin_interfaces
-)
-
-ament_export_dependencies(rosidl_default_runtime)
 
 add_executable(filter_node
   src/filter_node.cpp
@@ -51,9 +39,7 @@ ament_target_dependencies(filter_node
   sensor_msgs
   geometry_msgs
   visualization_msgs
-)
-rosidl_target_interfaces(filter_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+  nhk24_utils
 )
 
 add_executable(omni4_node
@@ -65,9 +51,7 @@ ament_target_dependencies(omni4_node
   sensor_msgs
   geometry_msgs
   can_plugins2
-)
-rosidl_target_interfaces(omni4_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+  nhk24_utils
 )
 
 add_executable(genbacat_node
@@ -78,9 +62,7 @@ ament_target_dependencies(genbacat_node
   rclcpp_components
   geometry_msgs
   tf2_ros
-)
-rosidl_target_interfaces(genbacat_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+  nhk24_utils
 )
 
 add_executable(pacman_node
@@ -92,9 +74,7 @@ ament_target_dependencies(pacman_node
   geometry_msgs
   tf2
   tf2_ros
-)
-rosidl_target_interfaces(pacman_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+  nhk24_utils
 )
 
 add_executable(path_loader_node
@@ -104,13 +84,16 @@ ament_target_dependencies(path_loader_node
   rclcpp
   rclcpp_components
   std_msgs
-)
-rosidl_target_interfaces(path_loader_node
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+  nhk24_utils
 )
 
 install(
-  TARGETS filter_node omni4_node pacman_node path_loader_node genbacat_node
+  TARGETS
+    filter_node
+    omni4_node
+    pacman_node
+    path_loader_node
+    genbacat_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
