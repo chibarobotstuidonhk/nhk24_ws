@@ -4,7 +4,7 @@ import launch_ros
 import os
 
 def generate_launch_description():
-    ekf_node_params_yaml = "src/nhk24_use_amcl/launch/ekf_node.yaml"
+    ekf_node_params_yaml = "launch/ekf_node.yaml"
 
     robot_localization_node = launch_ros.actions.Node(
          package='robot_localization',

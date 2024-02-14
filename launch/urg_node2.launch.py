@@ -30,7 +30,7 @@ from lifecycle_msgs.msg import Transition
 def generate_launch_description():
 
     # パラメータファイルのパス設定
-    config_file_path = 'src/nhk24_use_amcl/launch/urg_node2.yaml' # stew edited
+    config_file_path = 'launch/urg_node2.yaml' # stew edited
 
     # パラメータファイルのロード
     with open(config_file_path, 'r') as file:
