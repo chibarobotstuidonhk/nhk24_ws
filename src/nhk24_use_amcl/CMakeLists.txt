@@ -87,6 +87,17 @@ ament_target_dependencies(path_loader_node
   nhk24_utils
 )
 
+add_executable(ball_chaser_node
+  src/ball_chaser.cpp
+)
+ament_target_dependencies(ball_chaser_node
+  rclcpp
+  rclcpp_components
+  tf2
+  tf2_ros
+  nhk24_utils
+)
+
 install(
   TARGETS
     filter_node
@@ -94,6 +105,7 @@ install(
     pacman_node
     path_loader_node
     genbacat_node
+    ball_chaser_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
