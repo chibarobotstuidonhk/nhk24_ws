@@ -1,3 +1,9 @@
+/**
+ * @file omni4.hpp
+ * @brief そもそも足回り制御のノードが機体全体の状態を持つのはどうなんですかね？
+ * 
+ */
+
 #pragma once
 
 #include <cstdint>
