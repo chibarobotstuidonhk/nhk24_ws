@@ -49,7 +49,7 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 			, tf2_buffer{this->get_clock()}
 			, tf2_listener{tf2_buffer}
 			, body_twist_pub {
-				this->create_publisher<nhk24_utils::msg::Twist2d>("body_twist", 1)
+				this->create_publisher<nhk24_utils::msg::Twist2d>("body_twist_ball", 1)
 			}
 			, ball_pos_sub {
 				this->create_subscription<nhk24_utils::msg::Balls> (

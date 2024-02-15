@@ -31,7 +31,8 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 	enum class State : u8 {
 		EmergencyStop,
 		Manual,
-		Auto
+		Auto,
+		BallChaser,
 	};
 
 	struct MotorSpeedFixer final {
@@ -109,6 +110,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 		rclcpp::Publisher<can_plugins2::msg::Frame>::SharedPtr can_pub;
 		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_ball_pub;
 		Logicool logicool;
 
 		rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub{};
@@ -122,12 +124,19 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 			logicool{*this, "joy", {}, 10}
 		{
 			twist_sub = this->create_subscription<geometry_msgs::msg::Twist>("body_twist", 10, std::bind(&Omni4::twist_callback, this, std::placeholders::_1));
+			twist_sub = this->create_subscription<geometry_msgs::msg::Twist>("body_twist_ball", 10, std::bind(&Omni4::twist_ball_callback, this, std::placeholders::_1));
 			timer = this->create_wall_timer(10ms, std::bind(&Omni4::timer_callback, this));
 		}
 
 		private:
 		void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
 			if(state == State::Auto) {
+				auto_twist_msg = Twist2d::from_msg<geometry_msgs::msg::Twist>(*msg);
+			}
+		}
+
+		void twist_ball_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+			if(state == State::BallChaser) {
 				auto_twist_msg = Twist2d::from_msg<geometry_msgs::msg::Twist>(*msg);
 			}
 		}
@@ -146,6 +155,10 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 			}
 			else if(logicool.is_pushed_down(Logicool::Buttons::a)) {
 				state = State::Auto;
+				change_mode(shirasu::Command::recover_velocity);
+			}
+			else if(logicool.is_pushed_down(Logicool::Buttons::b)) {
+				state = State::BallChaser;
 				change_mode(shirasu::Command::recover_velocity);
 			}
 
@@ -170,6 +183,7 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 				}
 
 				case State::Auto:
+				case State::BallChaser:
 				{
 					update(auto_twist_msg, dt);
 					break;
