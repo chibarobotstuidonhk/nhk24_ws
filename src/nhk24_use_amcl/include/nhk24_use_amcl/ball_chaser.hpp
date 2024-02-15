@@ -32,7 +32,7 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 
 	struct BallChaser final : rclcpp::Node {
 		std::vector<Ball> balls{};
-		Pid<Vec2d, double> pid_xy{};
+		Pid<double, double> pid_dis{};
 		Pid<double, double> pid_th{};
 		double distance_to_ball{};
 		double angle_to_ball{};
@@ -56,7 +56,10 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 					"ball_pos"
 					, 1
 					, [this](const nhk24_utils::msg::Balls::SharedPtr msg) {
-						std::vector<Ball> balls(msg->balls.size());
+						std::vector<Ball> balls(std::move(this->balls));  // 並行処理で死ぬ
+						balls.clear();
+						balls.reserve(msg->balls.size());
+
 						for(size_t i = 0; i < balls.size(); ++i) {
 							balls[i] = Ball::from_msg(msg->balls[i]);
 						}
@@ -71,16 +74,15 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 				)
 			}
 		{
-			this->declare_parameter("pid_xy_p", 1.0);
-			this->declare_parameter("pid_xy_i", 0.0);
-			this->declare_parameter("pid_xy_d", 0.0);
-			this->declare_parameter("pid_xy_max_integral_x", 0.0);
-			this->declare_parameter("pid_xy_max_integral_y", 0.0);
+			this->declare_parameter("pid_dis_p", 1.0);
+			this->declare_parameter("pid_dis_i", 0.0);
+			this->declare_parameter("pid_dis_d", 0.0);
+			this->declare_parameter("pid_dis_max_integral", 10.0);
 			
 			this->declare_parameter("pid_th_p", 1.0);
 			this->declare_parameter("pid_th_i", 0.0);
 			this->declare_parameter("pid_th_d", 0.0);
-			this->declare_parameter("pid_th_max_integral", 0.0);
+			this->declare_parameter("pid_th_max_integral", 10.0);
 
 			this->declare_parameter("distance_to_ball", 1.0);
 			this->declare_parameter("angle_to_ball", 0.1508);
@@ -96,20 +98,36 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 				return;
 			}
 
-			const auto target = this->target_pose();
+			// 手を横に突き出して、突き出した手がボールに向くように体ごと回転し、手の向くほうに移動している感じ
+			const auto [dis_e, ang_e] = calc_pose_error(balls, *current_pose, this->distance_to_ball, this->angle_to_ball);
 
-			const auto error = target - *current_pose;
+			const auto dis_out = this->pid_dis.update(dis_e, 0.1);
+			const auto ang_out = this->pid_th.update(ang_e, 0.1);
+
 			const auto cmd_vel = Twist2d {
-				this->pid_xy.update(error.linear, 0.1)
-				, this->pid_th.update(error.angular, 0.1)
+				Vec2d {
+					dis_out * std::cos(this->angle_to_ball)
+					, dis_out * std::sin(this->angle_to_ball)
+				}
+				, ang_out
 			};
 
 			this->body_twist_pub->publish(cmd_vel.to_msg<nhk24_utils::msg::Twist2d>());
 		}
 
 		/// @todo: implement the logic to choose a ball and best pose to pick it up
-		auto target_pose() -> Twist2d {
-			return Twist2d{0.0, 0.0, 0.0};
+		static auto calc_pose_error(const std::vector<Ball>& balls, const Twist2d& current_pose, const double distance_to_ball, const double angle_to_ball) -> std::tuple<double, double> {
+			// とりあえず1つボールを選ぶ
+			const auto ball = balls[0];
+
+			const auto ball_pos = (ball.position - current_pose.linear);
+			const auto angle = std::atan2(ball_pos.y, ball_pos.x) - current_pose.angular;
+			const auto distance = std::hypot(ball_pos.x, ball_pos.y);
+
+			return  std::tuple {
+				distance - distance_to_ball
+				, angle - angle_to_ball
+			};
 		}
 
 		auto get_current_pose() const -> std::optional<Twist2d> {
@@ -129,14 +147,11 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 
 		void update_params() {
 			{
-				const auto p = this->get_parameter("pid_xy_p").as_double();
-				const auto i = this->get_parameter("pid_xy_i").as_double();
-				const auto d = this->get_parameter("pid_xy_d").as_double();
-				const auto max_integral = Vec2d {
-					this->get_parameter("pid_xy_max_integral_x").as_double()
-					, this->get_parameter("pid_xy_max_integral_y").as_double()
-				};
-				this->pid_xy = Pid<Vec2d, double>::make(p, i, d, max_integral);
+				const auto p = this->get_parameter("pid_dis_p").as_double();
+				const auto i = this->get_parameter("pid_dis_i").as_double();
+				const auto d = this->get_parameter("pid_dis_d").as_double();
+				const auto max_integral = this->get_parameter("pid_dis_max_integral").as_double();
+				this->pid_dis = Pid<double, double>::make(p, i, d, max_integral);
 			}
 			{
 				const auto p = this->get_parameter("pid_th_p").as_double();
