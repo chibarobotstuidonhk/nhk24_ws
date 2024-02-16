@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <functional>
+#include <string_view>
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Transform.h>
@@ -11,6 +12,9 @@
 #include <tf2/exceptions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/msg/transform.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/point.hpp>
 
 #include <nhk24_utils/msg/balls.hpp>
 #include <nhk24_utils/msg/twist2d.hpp>
@@ -18,6 +22,7 @@
 #include <nhk24_utils/std_type.hpp>
 #include <nhk24_utils/pid.hpp>
 #include <nhk24_utils/vec2d.hpp>
+#include <nhk24_utils/vec3d.hpp>
 #include <nhk24_utils/twist2d.hpp>
 #include <nhk24_utils/geometry_msgs_convertor.hpp>
 #include <nhk24_utils/ball.hpp>
@@ -26,6 +31,7 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 	using namespace crs_lib::integer_types;
 	using nhk24_utils::stew::pid::Pid;
 	using nhk24_utils::stew::vec2d::Vec2d;
+	using nhk24_utils::stew::vec3d::Vec3d;
 	using nhk24_utils::stew::twist2d::Twist2d;
 	using nhk24_utils::stew::geometry_msgs_convertor::MsgConvertor;
 	using nhk24_utils::stew::ball::Ball;
@@ -91,15 +97,24 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 		}
 
 		void timer_callback() {
-			const auto current_pose = this->get_current_pose();
+			const auto current_pose = [this]() -> std::optional<Twist2d> {
+				const auto transform = this->lookup_transform("map", "base_link");
+				if(transform) {
+					return std::optional<Twist2d>{std::in_place, this->twist2d_from_tf2(transform->transform)};
+				}
+				else return {std::nullopt};
+			}();
+
+			const auto base_to_camera = this->lookup_transform("base_link", "camera_link");
+
 			const auto& balls = this->balls;
 
-			if(!current_pose || balls.empty()) {
+			if(!current_pose || !base_to_camera || balls.empty()) {
 				return;
 			}
 
 			// 手を横に突き出して、突き出した手がボールに向くように体ごと回転し、手の向くほうに移動している感じ
-			const auto [dis_e, ang_e] = calc_pose_error(balls, *current_pose, this->distance_to_ball, this->angle_to_ball);
+			const auto [dis_e, ang_e] = calc_pose_error(balls, *current_pose, *base_to_camera, this->distance_to_ball, this->angle_to_ball);
 
 			const auto dis_out = this->pid_dis.update(dis_e, 0.1);
 			const auto ang_out = this->pid_th.update(ang_e, 0.1);
@@ -116,11 +131,24 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 		}
 
 		/// @todo: implement the logic to choose a ball and best pose to pick it up
-		static auto calc_pose_error(const std::vector<Ball>& balls, const Twist2d& current_pose, const double distance_to_ball, const double angle_to_ball) -> std::tuple<double, double> {
+		static auto calc_pose_error (
+			const std::vector<Ball>& balls
+			, const Twist2d& current_pose
+			, const geometry_msgs::msg::TransformStamped& base_to_camera
+			, const double distance_to_ball
+			, const double angle_to_ball
+		) -> std::tuple<double, double> {
 			// とりあえず1つボールを選ぶ
 			const auto ball = balls[0];
+			
+			// ボールのbase_linkからの座標を得る
+			geometry_msgs::msg::PointStamped ball_from_camera{};
+			ball_from_camera.header.frame_id = "camera_link";
+			ball_from_camera.point = ball.position.to_msg<geometry_msgs::msg::Point>();
+			geometry_msgs::msg::PointStamped ball_from_base{};
+			tf2::doTransform(ball_from_camera, ball_from_base, base_to_camera);
+			const auto ball_pos = Vec3d::from_msg<geometry_msgs::msg::Point>(ball_from_base.point);
 
-			const auto ball_pos = (ball.position - current_pose.linear);
 			const auto angle = std::atan2(ball_pos.y, ball_pos.x) - current_pose.angular;
 			const auto distance = std::hypot(ball_pos.x, ball_pos.y);
 
@@ -130,19 +158,21 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 			};
 		}
 
-		auto get_current_pose() const -> std::optional<Twist2d> {
+		auto lookup_transform(const std::string_view from_frame, const std::string_view to_frame) const -> std::optional<geometry_msgs::msg::TransformStamped> {
 			try {
-				const auto transform = tf2_buffer.lookupTransform("map", "base_link", tf2::TimePointZero).transform;
-				const auto v = transform.translation;
-				double roll, pitch, yaw;
-				tf2::Matrix3x3{MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::fromMsg(transform.rotation)}
-					.getRPY(roll, pitch, yaw);
-				return Twist2d{v.x, v.y, yaw};
-			
+				return tf2_buffer.lookupTransform(from_frame.data(), to_frame.data(), tf2::TimePointZero);
 			} catch(const tf2::TransformException& e) {
 				RCLCPP_ERROR(this->get_logger(), "ball_chaser:  %s", e.what());
 				return std::nullopt;
 			}
+		}
+
+		static auto twist2d_from_tf2(const geometry_msgs::msg::Transform& transform) -> Twist2d {
+			const auto v = transform.translation;
+			double roll, pitch, yaw;
+			tf2::Matrix3x3{MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::fromMsg(transform.rotation)}
+				.getRPY(roll, pitch, yaw);
+			return Twist2d{v.x, v.y, yaw};
 		}
 
 		void update_params() {
