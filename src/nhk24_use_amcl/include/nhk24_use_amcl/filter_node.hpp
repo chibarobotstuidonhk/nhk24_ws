@@ -1,3 +1,5 @@
+/// @todo: TF2からbase_link -> lidar_linkのtransformを得る(現状、直値を入れてしまっている)
+
 #pragma once
 
 #include <cmath>
@@ -44,7 +46,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			, sub_filter_param(create_subscription<nhk24_utils::msg::FilterParam>("filter_param", 10, std::bind(&FilterNode::callback_filter_param, this, std::placeholders::_1)))
 			, seg_window(10)
 			, seg_threshold(0.100f)
-			, base_to_lidar(0.010, -0.040)
+			, base_to_lidar(0.000, -0.000)
 			, footprint_size(0.700f / 1.4142f, 0.700f / 1.4142f)
 			, shadow_filter_threshold_angle(0.100f)
 			, shadow_filter_window(10)
