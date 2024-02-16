@@ -173,7 +173,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 						result.is_goal_reached = true;
 						result_pub->publish(result);
 
-						this->path = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(path[0]);
+						this->path = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(path.back());
 						
 						RCLCPP_INFO_STREAM(this->get_logger(), "GOAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 						return;
