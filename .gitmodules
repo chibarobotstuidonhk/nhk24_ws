@@ -8,3 +8,6 @@
 	path = src/image_sensing
 	url = https://github.com/Tomozawa/image_sensing.git
 	branch = ros_mono_cam
+[submodule "tool/Get_coordinate_on_map"]
+	path = tool/Get_coordinate_on_map
+	url = https://github.com/Won-CCS/Get_coordinate_on_map.git
