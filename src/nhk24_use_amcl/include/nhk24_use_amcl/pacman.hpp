@@ -57,7 +57,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			return Averaging{ide, std::vector<std::optional<T_>>(n), 0, 0};
 		}
 
-		auto update(T_&& latest, auto logger) -> T_ {
+		auto update(T_&& latest) -> T_ {
 			sum += latest;
 			if(const auto index = (head + len) % buf.size(); buf[index]) {
 				sum -= *buf[index];
@@ -166,7 +166,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			};
 
 			if(const auto current_pose_ = get_current_pose(); current_pose_) {
-				const auto current_pose = current_pose_averaging.update(Twist2d{*current_pose_}, this->get_logger());
+				const auto current_pose = current_pose_averaging.update(Twist2d{*current_pose_});
 				{
 					geometry_msgs::msg::TransformStamped msg{};
 					msg.header.frame_id = "map";
