@@ -11,3 +11,6 @@
 [submodule "tool/Get_coordinate_on_map"]
 	path = tool/Get_coordinate_on_map
 	url = https://github.com/Won-CCS/Get_coordinate_on_map.git
+[submodule "src/odometry2024"]
+	path = src/odometry2024
+	url = https://github.com/Won-CCS/odometry2024.git
