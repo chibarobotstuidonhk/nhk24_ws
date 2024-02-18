@@ -23,9 +23,11 @@
 #include <tf2/exceptions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nhk24_utils/msg/path.hpp>
 #include <nhk24_utils/msg/result.hpp>
 
@@ -43,10 +45,39 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 	using nhk24_utils::stew::geometry_msgs_convertor::MsgConvertor;
 	using nhk24_utils::stew::pid::Pid;
 
+	template<class T_>
+	struct Averaging {
+		T_ sum;
+		std::vector<std::optional<T_>> buf;
+		size_t len;
+		size_t head;
+
+
+		static auto make(const size_t n, const T_ ide) -> Averaging {
+			return Averaging{ide, std::vector<std::optional<T_>>(n), 0, 0};
+		}
+
+		auto update(T_&& latest, auto logger) -> T_ {
+			sum += latest;
+			if(const auto index = (head + len) % buf.size(); buf[index]) {
+				sum -= *buf[index];
+				buf[index] = std::make_optional(std::move(latest));
+				++head;
+			}
+			else {
+				buf[index] = std::make_optional(std::move(latest));
+				++len;
+			}
+
+			return sum / len;
+		}
+	};
+
 	struct PacMan final : rclcpp::Node {
 		private:
 		std::variant<std::monostate, nhk24_utils::msg::Path, Twist2d> path;
 		Pid<Twist2d, double> pid_controller;
+		Averaging<Twist2d> current_pose_averaging;
 		uint32_t lookahead;
 		uint32_t lookback;
 		uint32_t step;
@@ -54,6 +85,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 
 		tf2_ros::Buffer tf2_buffer;
 		tf2_ros::TransformListener tf2_listener;
+		tf2_ros::TransformBroadcaster tf2_broadcaster;
 
 		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
 		rclcpp::Publisher<nhk24_utils::msg::Result>::SharedPtr result_pub;
@@ -65,12 +97,14 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			: rclcpp::Node("pacman", options)
 			, path()
 			, pid_controller{Pid<Twist2d, double>::make(1.0, 0.0, 0.0, {{3.0, 3.0}, 1.0})}
+			, current_pose_averaging{Averaging<Twist2d>::make(20, Twist2d{{0.0, 0.0}, 0.0})}
 			, lookahead{1}
 			, lookback{0}
 			, step{1}
 			, current_index{0}
 			, tf2_buffer{this->get_clock()}
 			, tf2_listener{tf2_buffer}
+			, tf2_broadcaster{*this}
 			, cmd_vel_pub(this->create_publisher<geometry_msgs::msg::Twist>("body_twist", 1))
 			, result_pub(this->create_publisher<nhk24_utils::msg::Result>("result", 10))
 			, path_sub(this->create_subscription<nhk24_utils::msg::Path>("path", 10, std::bind(&PacMan::path_callback, this, std::placeholders::_1)))
@@ -132,7 +166,21 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			};
 
 			if(const auto current_pose_ = get_current_pose(); current_pose_) {
-				const auto current_pose = *current_pose_;
+				const auto current_pose = current_pose_averaging.update(Twist2d{*current_pose_}, this->get_logger());
+				{
+					geometry_msgs::msg::TransformStamped msg{};
+					msg.header.frame_id = "map";
+					msg.child_frame_id = "base_link2";
+					tf2::Quaternion q{};
+					q.setEuler(current_pose.angular, 0, 0);
+					msg.transform.rotation = MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::toMsg(q);
+					msg.transform.translation.x = current_pose.linear.x;
+					msg.transform.translation.y = current_pose.linear.y;
+					msg.transform.translation.z = 0;
+					tf2_broadcaster.sendTransform(msg);
+				}
+
+				RCLCPP_INFO_STREAM(this->get_logger(), current_pose.linear.x << " " << current_pose.linear.y << " " << current_pose.angular);
 
 				Twist2d target_pose = {};
 				if(std::get_if<std::monostate>(&path)) return;
