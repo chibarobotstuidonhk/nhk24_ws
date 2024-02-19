@@ -206,7 +206,7 @@
 	  <joint name="lidar_joint" type="fixed">
 		<parent link="base_link"/>
 		<child link="lidar_link"/>
-		<origin xyz="0 0 0.70" rpy="0 0 ${pi}"/>
+		<origin xyz="0 -0.250 0.015" rpy="0 ${pi} ${pi}/2"/>
 	  </joint>
 	  
 	  <gazebo reference="lidar_link">
