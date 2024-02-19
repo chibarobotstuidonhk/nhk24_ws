@@ -47,7 +47,7 @@ namespace nhk24_use_amcl::stew::filter_node::impl {
 			, seg_window(10)
 			, seg_threshold(0.100f)
 			, base_to_lidar(0.000, -0.000)
-			, footprint_size(0.700f / 1.4142f, 0.700f / 1.4142f)
+			, footprint_size(0.250f, 0.250f)
 			, shadow_filter_threshold_angle(0.100f)
 			, shadow_filter_window(10)
 		{}
