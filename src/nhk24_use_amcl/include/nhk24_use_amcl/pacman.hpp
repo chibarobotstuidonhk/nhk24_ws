@@ -172,7 +172,8 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					msg.header.frame_id = "map";
 					msg.child_frame_id = "base_link2";
 					tf2::Quaternion q{};
-					q.setEuler(current_pose.angular, 0, 0);
+					q.setRPY(0, 0, current_pose.angular);
+					RCLCPP_INFO_STREAM(this->get_logger(), "q: " << q.getW() << " " << q.getX() << " " << q.getY() << " " << q.getZ());
 					msg.transform.rotation = MsgConvertor<tf2::Quaternion, geometry_msgs::msg::Quaternion>::toMsg(q);
 					msg.transform.translation.x = current_pose.linear.x;
 					msg.transform.translation.y = current_pose.linear.y;
@@ -203,6 +204,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 					double most_closest_distance = std::numeric_limits<double>::max();
 					for(size_t i = begin; const Twist2d& pose : path | take_subrange(begin, end) | cast_to_twist2d) {
 						const double distance = (pose.linear - current_pose.linear).norm2();
+						RCLCPP_INFO_STREAM(this->get_logger(), "distance[" << i << "]: " << distance);
 						if(distance < most_closest_distance) {
 							most_closest_index = i;
 							most_closest_distance = distance;
