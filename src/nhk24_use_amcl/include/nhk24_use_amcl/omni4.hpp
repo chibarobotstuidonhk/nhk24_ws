@@ -101,12 +101,12 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 
 	struct Omni4 final : rclcpp::Node {
 		private:
-		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x120), mkopt(0x144u), mkopt(0x150u), mkopt(0x110)};  // 第一象限から反時計回りに見ていく
+		static constexpr std::array<std::optional<u32>, 4> ids = {mkopt(0x160), mkopt(0x164u), mkopt(0x110u), mkopt(0x154)};  // 第一象限から反時計回りに見ていく
 
 		/// @todo 以下の値を適切に設定する -> したつもり
-		static constexpr double center_to_wheel = 0.250 * 1.41421356;  // 中心から駆動輪までの距離[m]
+		static constexpr double center_to_wheel = 0.504;  // 中心から駆動輪までの距離[m]
 		static constexpr double wheel_radius = 0.060;  // 駆動輪の半径[m](雑)
-		static constexpr double wheel_to_motor_ratio = 61;  // 駆動輪からモーターへの倍速比
+		static constexpr double wheel_to_motor_ratio = 33.45;  // 駆動輪からモーターへの倍速比
 
 		State state{State::EmergencyStop};
 		Twist2d auto_twist_msg{{0.0, 0.0}, 0.0};
