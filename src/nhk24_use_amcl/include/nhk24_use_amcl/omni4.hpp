@@ -118,8 +118,8 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
 		Logicool logicool;
 
-		rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub{};
-		rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_ball_sub{};
+		rclcpp::Subscription<nhk24_utils::msg::Twist2d>::SharedPtr twist_sub{};
+		rclcpp::Subscription<nhk24_utils::msg::Twist2d>::SharedPtr twist_ball_sub{};
 		rclcpp::TimerBase::SharedPtr timer{};
 
 		public:
@@ -129,25 +129,25 @@ namespace nhk24_use_amcl::stew::omni4::impl {
 			cmd_vel_pub(create_publisher<geometry_msgs::msg::Twist>("actual_cmd_vel", 1)),
 			logicool{*this, "joy", {}, 10}
 		{
-			twist_sub = this->create_subscription<geometry_msgs::msg::Twist>("body_twist", 10, std::bind(&Omni4::twist_callback, this, std::placeholders::_1));
-			twist_ball_sub = this->create_subscription<geometry_msgs::msg::Twist>("body_twist_ball", 10, std::bind(&Omni4::twist_ball_callback, this, std::placeholders::_1));
+			twist_sub = this->create_subscription<nhk24_utils::msg::Twist2d>("body_twist", 10, std::bind(&Omni4::twist_callback, this, std::placeholders::_1));
+			twist_ball_sub = this->create_subscription<nhk24_utils::msg::Twist2d>("body_twist_ball", 10, std::bind(&Omni4::twist_ball_callback, this, std::placeholders::_1));
 			timer = this->create_wall_timer(10ms, std::bind(&Omni4::timer_callback, this));
 		}
 
 		private:
-		void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+		void twist_callback(const nhk24_utils::msg::Twist2d::SharedPtr msg) {
 			RCLCPP_INFO_STREAM(this->get_logger(), "twist_callback");
 			if(state == State::Auto) {
-				RCLCPP_INFO_STREAM(this->get_logger(), "twist_from_pacman: " << msg->linear.x << msg->linear.y << msg->angular.z);
-				auto_twist_msg = Twist2d::from_msg<geometry_msgs::msg::Twist>(*msg);
+				RCLCPP_INFO_STREAM(this->get_logger(), "twist_from_pacman: " << msg->linear.x << msg->linear.y << msg->angular);
+				auto_twist_msg = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(*msg);
 			}
 		}
 
-		void twist_ball_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+		void twist_ball_callback(const nhk24_utils::msg::Twist2d::SharedPtr msg) {
 			RCLCPP_INFO_STREAM(this->get_logger(), "twist_ball_callback");
 			if(state == State::BallChaser) {
-				RCLCPP_INFO_STREAM(this->get_logger(), "twist_from_ball_chaser: " << msg->linear.x << msg->linear.y << msg->angular.z);
-				auto_twist_msg = Twist2d::from_msg<geometry_msgs::msg::Twist>(*msg);
+				RCLCPP_INFO_STREAM(this->get_logger(), "twist_from_ball_chaser: " << msg->linear.x << msg->linear.y << msg->angular);
+				auto_twist_msg = Twist2d::from_msg<nhk24_utils::msg::Twist2d>(*msg);
 			}
 		}
 

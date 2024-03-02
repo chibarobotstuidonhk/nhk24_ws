@@ -87,7 +87,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 		tf2_ros::TransformListener tf2_listener;
 		tf2_ros::TransformBroadcaster tf2_broadcaster;
 
-		rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+		rclcpp::Publisher<nhk24_utils::msg::Twist2d>::SharedPtr cmd_vel_pub;
 		rclcpp::Publisher<nhk24_utils::msg::Result>::SharedPtr result_pub;
 		rclcpp::Subscription<nhk24_utils::msg::Path>::SharedPtr path_sub;
 		rclcpp::TimerBase::SharedPtr timer;
@@ -105,7 +105,7 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 			, tf2_buffer{this->get_clock()}
 			, tf2_listener{tf2_buffer}
 			, tf2_broadcaster{*this}
-			, cmd_vel_pub(this->create_publisher<geometry_msgs::msg::Twist>("body_twist", 1))
+			, cmd_vel_pub(this->create_publisher<nhk24_utils::msg::Twist2d>("body_twist", 1))
 			, result_pub(this->create_publisher<nhk24_utils::msg::Result>("result", 10))
 			, path_sub(this->create_subscription<nhk24_utils::msg::Path>("path", 10, std::bind(&PacMan::path_callback, this, std::placeholders::_1)))
 			, timer(this->create_wall_timer(10ms, std::bind(&PacMan::timer_callback, this)))
@@ -236,10 +236,10 @@ namespace nhk24_use_amcl::stew::pacman::impl {
 				const auto [local_x, local_y] = rot(target_twist.linear, -current_pose.angular);
 				
 				// publish cmd_vel
-				geometry_msgs::msg::Twist msg{};
+				nhk24_utils::msg::Twist2d msg{};
 				msg.linear.x = local_x;
 				msg.linear.y = local_y;
-				msg.angular.z = target_twist.angular;
+				msg.angular = target_twist.angular;
 				cmd_vel_pub->publish(msg);
 			}
 		}

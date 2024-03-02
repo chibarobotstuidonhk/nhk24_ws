@@ -23,7 +23,7 @@ namespace nhk24_utils::stew::ball::impl {
 
 		static auto from_msg(const nhk24_utils::msg::Ball& msg) -> Ball {
 			return Ball {
-				.position = Vec3d::from_msg<geometry_msgs::msg::Point>(msg.position)
+				.position = Vec3d::from_msg<geometry_msgs::msg::Point>(msg.position) * 0.001
 				, .id = msg.id
 				, .color = static_cast<BallColor>(msg.color)
 			};

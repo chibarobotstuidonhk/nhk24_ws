@@ -62,16 +62,18 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 			}
 			, ball_pos_sub {
 				this->create_subscription<nhk24_utils::msg::Balls> (
-					"ball_pos"
+					"balls"
 					, 1
 					, [this](const nhk24_utils::msg::Balls::SharedPtr msg) {
+						RCLCPP_INFO_STREAM(this->get_logger(), "in ball_pos_sub, " << msg->balls.size());
 						std::vector<Ball> balls(std::move(this->balls));  // 並行処理で死ぬ
 						balls.clear();
 						balls.reserve(msg->balls.size());
 
-						for(size_t i = 0; i < balls.size(); ++i) {
-							balls[i] = Ball::from_msg(msg->balls[i]);
+						for(size_t i = 0; i < msg->balls.size(); ++i) {
+							balls.push_back(Ball::from_msg(msg->balls[i]));
 						}
+						RCLCPP_INFO_STREAM(this->get_logger(), "in ball_pos_sub2, " << balls.size());
 						this->balls = std::move(balls);
 					}
 				)
@@ -94,33 +96,48 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 			this->declare_parameter("pid_th_max_integral", 10.0);
 
 			this->declare_parameter("distance_to_ball", 1.0);
-			this->declare_parameter("angle_to_ball", 0.1508);
+			this->declare_parameter("angle_to_ball", 1.508);
 
 			this->update_params();
 		}
 
 		void timer_callback() {
-			const auto current_pose = [this]() -> std::optional<Twist2d> {
-				const auto transform = this->lookup_transform("map", "base_link");
-				if(transform) {
-					return std::optional<Twist2d>{std::in_place, this->twist2d_from_tf2(transform->transform)};
-				}
-				else return {std::nullopt};
-			}();
+			// const auto current_pose = [this]() -> std::optional<Twist2d> {
+			// 	const auto transform = this->lookup_transform("map", "base_link");
+			// 	if(transform) {
+			// 		return std::optional<Twist2d>{std::in_place, this->twist2d_from_tf2(transform->transform)};
+			// 	}
+			// 	else return {std::nullopt};
+			// }();
 
 			const auto base_to_camera = this->lookup_transform("base_link", "camera_link");
 
 			const auto& balls = this->balls;
 
-			if(!current_pose || !base_to_camera || balls.empty()) {
+			if(/*!current_pose ||*/ !base_to_camera || balls.empty()) {
+				const auto cmd_vel = Twist2d {
+					Vec2d {
+						0.0
+						, 0.0
+					}
+					, 0.0
+				};
+
+				this->body_twist_pub->publish(cmd_vel.to_msg<nhk24_utils::msg::Twist2d>());
+
+				RCLCPP_INFO_STREAM(this->get_logger(), "base_to_camera: " << !!base_to_camera << " balls.empty: " << balls.empty());
 				return;
 			}
 
+			RCLCPP_INFO_STREAM(this->get_logger(), "balls[0]: " << balls[0].position.x << " " << balls[0].position.y << " " << balls[0].position.z);
+
 			// 手を横に突き出して、突き出した手がボールに向くように体ごと回転し、手の向くほうに移動している感じ
-			const auto [dis_e, ang_e] = calc_pose_error(balls, *current_pose, *base_to_camera, this->distance_to_ball, this->angle_to_ball);
+			const auto [dis_e, ang_e] = calc_pose_error(balls, /**current_pose,*/ *base_to_camera, this->distance_to_ball, this->angle_to_ball, this->get_logger());
+
 
 			const auto dis_out = this->pid_dis.update(dis_e, 0.1);
 			const auto ang_out = this->pid_th.update(ang_e, 0.1);
+
 
 			const auto cmd_vel = Twist2d {
 				Vec2d {
@@ -136,10 +153,10 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 		/// @todo: implement the logic to choose a ball and best pose to pick it up
 		static auto calc_pose_error (
 			const std::vector<Ball>& balls
-			, const Twist2d& current_pose
 			, const geometry_msgs::msg::TransformStamped& base_to_camera
 			, const double distance_to_ball
 			, const double angle_to_ball
+			, rclcpp::Logger&& logger
 		) -> std::tuple<double, double> {
 			// とりあえず1つボールを選ぶ
 			const auto ball = balls[0];
@@ -152,8 +169,10 @@ namespace nhk24_use_amcl::stew::ball_chaser::impl {
 			tf2::doTransform(ball_from_camera, ball_from_base, base_to_camera);
 			const auto ball_pos = Vec3d::from_msg<geometry_msgs::msg::Point>(ball_from_base.point);
 
-			const auto angle = std::atan2(ball_pos.y, ball_pos.x) - current_pose.angular;
+			const auto angle = std::atan2(ball_pos.y, ball_pos.x);
 			const auto distance = std::hypot(ball_pos.x, ball_pos.y);
+
+			RCLCPP_INFO_STREAM(logger, "ball_pos: " << ball_pos.x << " " << ball_pos.y << " " << ball_pos.z);
 
 			return  std::tuple {
 				distance - distance_to_ball
