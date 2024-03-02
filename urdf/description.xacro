@@ -201,15 +201,15 @@
 			 <cylinder radius="0.0508" length="0.055"/>
 		  </geometry>
 		</visual>
-	  </link>
+	</link>
 	  
-	  <joint name="lidar_joint" type="fixed">
+	<joint name="lidar_joint" type="fixed">
 		<parent link="base_link"/>
 		<child link="lidar_link"/>
-		<origin xyz="0 -0.250 0.015" rpy="0 ${pi} ${pi}/2"/>
-	  </joint>
+		<origin xyz="0 -0 0.0200" rpy="0 0 0"/>
+	</joint>
 	  
-	  <gazebo reference="lidar_link">
+	<gazebo reference="lidar_link">
 		<sensor name="lidar" type="ray">
 		  <always_on>true</always_on>
 		  <visualize>true</visualize>
@@ -243,4 +243,18 @@
 		  </plugin>
 		</sensor>
 	  </gazebo>
+
+	<link name="camera_link">
+		<visual>
+			<geometry>
+				<box size="0.1 0.1 0.1" />
+			</geometry>
+		</visual>
+	</link>
+
+	<joint name="camera_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="camera_link"/>
+		<origin xyz="0 0.500 0.200" rpy="${-pi/2} 0 0"/>
+	</joint>
 </robot>
