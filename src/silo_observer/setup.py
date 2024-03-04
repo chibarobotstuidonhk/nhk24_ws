@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'silo_observer_node = silo_observer.silo_observer_node:main'
+            'silo_observer_node = silo_observer.silo_observer_node:main',
+            'image_window_operator_node = silo_observer.image_window_operator_node:main'
         ],
     },
 )
