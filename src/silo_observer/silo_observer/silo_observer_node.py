@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import queue
+from collections import Counter
 
 import rclpy
 from rclpy.node import Node
@@ -11,7 +13,7 @@ from tf2_ros.transform_listener import TransformListener
 
 from geometry_msgs.msg import TransformStamped
 
-NUMBER_OF_SILOS = 1
+NUMBER_OF_SILOS = 5
 SILO_CAPACITY = 3
 
 class Vector:
@@ -63,23 +65,19 @@ class Camera:
     # ELECOMカメラ
     camera_matrix = np.array([[970.7808694146526, 0.0, 385.0122379475739], [0.0, 970.1929411781452, 230.67852825871415], [0.0, 0.0, 1.0]], dtype=np.float32)
 
-
 class Silo:
-    top_coordinate = np.array([[0], [0], [525]], dtype=np.float32)
-    bottom_coordinate = np.array([[0], [0], [100]], dtype=np.float32)
-    top_camera_coordinate = np.array([0, 0, 0], dtype = np.float32)
-    bottom_camera_coordinate = np.array([0, 0, 0], dtype = np.float32)
-    top_image_coordinate = np.array([0, 0], dtype = np.float32)
-    bottom_image_coordinate = np.array([0, 0], dtype = np.float32)
-
-    width = 250
-    height = 425
-    balls = ["None", "None", "None"]
-    detection_flag = False
-
     def __init__(self, coordinate):
         self.top_coordinate = np.array([[coordinate.x], [coordinate.y], [525]], dtype=np.float32)
         self.bottom_coordinate = np.array([[coordinate.x], [coordinate.y], [100]], dtype=np.float32)
+        self.top_camera_coordinate = None
+        self.bottom_camera_coordinate = None
+        self.top_image_coordinate = None
+        self.bottom_image_coordinate = None
+
+        self.width = 250
+        self.height = 425
+        self.balls = ["None", "None", "None"]
+        self.detection_flag = False
 
 class SiloObserver(Node):
     def __init__(self):
@@ -95,100 +93,121 @@ class SiloObserver(Node):
 
         self.camera = Camera()
         # サイロの座標
-        # self.silos = [Silo(Coordinate(6000, 11500, 100, 0)), Silo(Coordinate(6000, 10750, 100, 0)), Silo(Coordinate(6000, 10000, 100, 0)), Silo(Coordinate(6000, 9250, 100, 0)), Silo(Coordinate(6000, 8500, 100, 0))]
-        self.silos = [Silo(Coordinate(4000, 1000, 0, 0))]
+        self.silos = [Silo(Coordinate(6000, 11500, 100, 0)), Silo(Coordinate(6000, 10750, 100, 0)), Silo(Coordinate(6000, 10000, 100, 0)), Silo(Coordinate(6000, 9250, 100, 0)), Silo(Coordinate(6000, 8500, 100, 0))]
+        # self.silos = [Silo(Coordinate(4000, 1000, 0, 0))]
 
-        # on_timer関数を1秒ごとに実行
-        self.timer = self.create_timer(1.0, self.on_timer)
+        # 過去の状態を保存するキュー
+        self.past_states = queue.Queue()
 
-        # self.observe_silos(self.silos, self.camera)
-
+        # on_timer関数を0.1秒ごとに実行
+        self.timer = self.create_timer(0.1, self.on_timer)
     
     def on_timer(self):
         # transformの取得に使用する変数にフレーム名を格納する。
         from_frame_rel = self.target_frame
         to_frame_rel = 'map'
 
-        # try:
-        #     t = self.tf_buffer.lookup_transform(
-        #         to_frame_rel,
-        #         from_frame_rel,
-        #         rclpy.time.Time())
-
-        #     # self.get_logger().info(f'got transform {to_frame_rel} to {from_frame_rel}')
+        try:
+            t = self.tf_buffer.lookup_transform(
+                to_frame_rel,
+                from_frame_rel,
+                rclpy.time.Time())
             
-        #     # カメラの外部パラメータ(ここは機体座標と、機体の姿勢から逐次的に求める必要がある)
-        #     quat = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
-        #     self.camera.rmat = quaternion_to_rotation_matrix(quat) * np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float32)
-        #     # camera.tvec = np.array([[0], [0], [50]], dtype=np.float32)
-        #     self.camera.tvec = np.matmul(self.camera.rmat, np.array([[t.transform.translation.x], [t.transform.translation.y], [t.transform.translation.z]], dtype=np.float32)) + np.array([[0], [0], [50]], dtype=np.float32)
+            # カメラの外部パラメータ(ここは機体座標と、機体の姿勢から逐次的に求める必要がある)
+            quat = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
+            self.camera.rmat = quaternion_to_rotation_matrix(quat) * np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float32)
+            self.camera.rmat = np.array([[0, -1, 0], 
+                     [0, 0, -1], 
+                     [1, 0, 0]], dtype=np.float32)
+            self.camera.tvec = np.matmul(self.camera.rmat, np.array([[t.transform.translation.x], [t.transform.translation.y], [t.transform.translation.z]], dtype=np.float32)) + np.array([[0], [0], [0]], dtype=np.float32)# 機体中心からカメラの位置までのベクトル
 
-        #     # self.get_logger().info(f'{camera.rmat}')
-
-        #     count = 0
-        #     for i in ['a', 'b', 'c', 'd', 'e']:
-        #         t = self.tf_buffer.lookup_transform(
-        #             to_frame_rel,
-        #             self.declare_parameter('target_frame', 'silo_' + i).get_parameter_value().string_value,
-        #             rclpy.time.Time())
+            # サイロの座標を取得
+            count = 0
+            for i in ['a', 'b', 'c', 'd', 'e']:
+                frame = 'silo_' + i
+                t = self.tf_buffer.lookup_transform(
+                    to_frame_rel,
+                    frame,
+                    rclpy.time.Time())
                 
-        #         self.silos[count](Coordinate(t.transform.translation.x, t.transform.translation.y, t.transform.translation.z, 0))
+                self.silos[count] = Silo(Coordinate(t.transform.translation.x, t.transform.translation.y, t.transform.translation.z, 0))
+                count += 1
             
-        # except TransformException as ex:
-        #     self.get_logger().info(
-        #         f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
-        #     return
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            return
 
-        # self.get_logger().info(f'test')
+        # 現在の状態を取得
+        self.observe_silos()
 
-        self.observe_silos(self.silos, self.camera)
+        # 過去の状態を保存
+        if self.past_states.qsize() > 10:
+            self.past_states.get()
+            self.past_states.put([self.silos[0].balls, self.silos[1].balls, self.silos[2].balls, self.silos[3].balls, self.silos[4].balls])
+        elif self.past_states.qsize() <= 10:
+            self.past_states.put([self.silos[0].balls, self.silos[1].balls, self.silos[2].balls, self.silos[3].balls, self.silos[4].balls]) 
+        
+        # 過去の状態で最も多い状態を取得
+        past_states = self.past_states.queue
+        for i in range(NUMBER_OF_SILOS):
+            past_state = []
+            for j in range(len(past_states)):
+                past_state.append(past_states[j][i]) 
+            counter = Counter(map(tuple, past_state))
+            most_common_state = max(counter, key=counter.get)
+            self.silos[i].balls = list(most_common_state)
 
+        # 状態をpublish
         msg = SilosStatus()
         msg.a.red = self.silos[0].balls.count("red")
         msg.a.blue = self.silos[0].balls.count("blue")
         msg.a.purple = self.silos[0].balls.count("purple")
-        # msg.b.red = self.silos[1].balls.count("red")
-        # msg.b.blue = self.silos[1].balls.count("blue")
-        # msg.b.purple = self.silos[1].balls.count("purple")
-        # msg.c.red = self.silos[2].balls.count("red")
-        # msg.c.blue = self.silos[2].balls.count("blue")
-        # msg.c.purple = self.silos[2].balls.count("purple")
-        # msg.d.red = self.silos[3].balls.count("red")
-        # msg.d.blue = self.silos[3].balls.count("blue")
-        # msg.d.purple = self.silos[3].balls.count("purple")
-        # msg.e.red = self.silos[4].balls.count("red")
-        # msg.e.blue = self.silos[4].balls.count("blue")
-        # msg.e.purple = self.silos[4].balls.count("purple")
+        msg.b.red = self.silos[1].balls.count("red")
+        msg.b.blue = self.silos[1].balls.count("blue")
+        msg.b.purple = self.silos[1].balls.count("purple")
+        msg.c.red = self.silos[2].balls.count("red")
+        msg.c.blue = self.silos[2].balls.count("blue")
+        msg.c.purple = self.silos[2].balls.count("purple")
+        msg.d.red = self.silos[3].balls.count("red")
+        msg.d.blue = self.silos[3].balls.count("blue")
+        msg.d.purple = self.silos[3].balls.count("purple")
+        msg.e.red = self.silos[4].balls.count("red")
+        msg.e.blue = self.silos[4].balls.count("blue")
+        msg.e.purple = self.silos[4].balls.count("purple")
 
         self.publisher.publish(msg)
 
         return
 
-
-    def observe_silos(self, silos, camera):
+    # サイロの状態を観測
+    def observe_silos(self):
         # カメラのキャプチャを開始
         cap = cv2.VideoCapture(0)
         # カメラからフレームを取得
         ret, frame = cap.read()
 
         # カメラ画像上のサイロの頂点の座標を取得
-        silos = world_to_camera_coordinate(silos, camera)
-        silos = camera_to_image_coordinate(silos, camera)
+        self.silos = world_to_camera_coordinate(self.silos, self.camera)
+        self.silos = camera_to_image_coordinate(self.silos, self.camera)
 
         # 画像を切り取ってボール検出
-        cut_imgs = cut_image(silos, frame)
-        silos = detect_balls(cut_imgs, silos, self)
+        self.silos, cut_imgs = cut_image(self.silos, frame)
 
-        # cv2.namedWindow('cut', cv2.WINDOW_NORMAL)
-        # cv2.imshow('cut', cut_imgs[0])
+        self.silos = detect_balls(self.silos, cut_imgs)
 
-        # for i in range(NUMBER_OF_SILOS):
-        #     self.get_logger().info(f'{silos[i].balls}')
+        # カットした画像表示
+        xx = 0
+        for img in cut_imgs:
+            cv2.namedWindow('cut'+str(xx), cv2.WINDOW_NORMAL)
+            cv2.imshow('cut'+str(xx), img)
+            xx += 1
 
         # 画像を表示
-        for silo in silos:
-            cv2.circle(frame, (int(silo.bottom_image_coordinate[0][0]), int(silo.bottom_image_coordinate[1][0])), 10, (0, 0, 255), thickness=cv2.FILLED)
-            cv2.circle(frame, (int(silo.top_image_coordinate[0][0]), int(silo.top_image_coordinate[1][0])), 10, (0, 0, 255), thickness=cv2.FILLED)
+        for silo in self.silos:
+            if silo.detection_flag == True:
+                cv2.circle(frame, (int(silo.bottom_image_coordinate[0][0]), int(silo.bottom_image_coordinate[1][0])), 10, (0, 0, 255), thickness=cv2.FILLED)
+                cv2.circle(frame, (int(silo.top_image_coordinate[0][0]), int(silo.top_image_coordinate[1][0])), 10, (0, 0, 255), thickness=cv2.FILLED)
         cv2.namedWindow('Detected', cv2.WINDOW_NORMAL)
         cv2.imshow('Detected', frame)
 
@@ -199,7 +218,7 @@ class SiloObserver(Node):
         #メモリを解放して終了するためのコマンド
         cap.release()
         
-
+# クォータニオンから回転行列に変換
 def quaternion_to_rotation_matrix(quat):
     x, y, z, w = quat
     rmat = np.array([[1 - 2 * y ** 2 - 2 * z ** 2, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w], [2 * x * y + 2 * z * w, 1 - 2 * x ** 2 - 2 * z ** 2, 2 * y * z - 2 * x * w], [2 * x * z - 2 * y * w, 2 * y * z + 2 * x * w, 1 - 2 * x ** 2 - 2 * y ** 2]], dtype=np.float32)
@@ -207,23 +226,15 @@ def quaternion_to_rotation_matrix(quat):
     return rmat
 
 # カメラ画像上のサイロの頂点の座標を取得
-def world_to_camera_coordinate(silos: Silo, camera: Camera):
+def world_to_camera_coordinate(silos, camera):
     for silo in silos:
         silo.bottom_camera_coordinate = np.matmul(camera.rmat, silo.bottom_coordinate) + camera.tvec
         silo.top_camera_coordinate = np.matmul(camera.rmat, silo.top_coordinate) + camera.tvec
 
     return silos
 
-#歪みを考慮しない座標変換
-# def camera_to_image_coordinate(bottom_camera_coordinate, top_camera_coordinate, camera: Camera):
-#     bottom_image_coordinate = np.matmul(camera.camera_matrix, bottom_camera_coordinate / bottom_camera_coordinate[2])
-#     top_image_coordinate = np.matmul(camera.camera_matrix, top_camera_coordinate / top_camera_coordinate[2])
-#     # print(camera.camera_matrix * top_camera_coordinate)
-
-#     return bottom_image_coordinate, top_image_coordinate
-
 #歪みを考慮した座標変換
-def camera_to_image_coordinate(silos: Silo, camera: Camera):
+def camera_to_image_coordinate(silos, camera):
     for silo in silos:
         bottom_x = silo.bottom_camera_coordinate[0] / silo.bottom_camera_coordinate[2]
         bottom_y = silo.bottom_camera_coordinate[1] / silo.bottom_camera_coordinate[2]
@@ -244,68 +255,71 @@ def camera_to_image_coordinate(silos: Silo, camera: Camera):
 
     return silos
 
-def cut_image(silos: Silo, image):
+# カメラ画像からサイロ部分のみを切り取る
+def cut_image(silos, image):
     cut_imgs = []
     for silo in silos:
         if(0 < silo.top_image_coordinate[0] < 640 and 0 < silo.top_image_coordinate[1] < 480 and 0 < silo.bottom_image_coordinate[0] < 640 and 0 < silo.bottom_image_coordinate[1] < 480):
             silo.detection_flag = True
-            cut_imgs.append(image[int(silo.top_image_coordinate[1]) : int(silo.bottom_image_coordinate[1]), int(silo.bottom_image_coordinate[0] - 20) : int(silo.bottom_image_coordinate[0] + 20)])
+            cut_imgs.append(image[int(silo.top_image_coordinate[1]) : int(silo.bottom_image_coordinate[1]), int(silo.bottom_image_coordinate[0] - 1) : int(silo.bottom_image_coordinate[0] + 1)])
         else:
             silo.detection_flag = False
     
-    return cut_imgs
+    return silos, cut_imgs
 
-def detect_balls(cut_imgs, silos, node):
-    region_height = []
-    for cut_img in cut_imgs:        
-        # 画像を縦方向に3分割
-        height, width = cut_img.shape[:2]
-        region_height.append(height // 3)
+# サイロ部分の画像からボールを検出
+def detect_balls(silos, cut_imgs):
+    detected_count = 0
+    for silo in silos:
+        if silo.detection_flag == True:
+            # 画像を縦方向に3分割
+            height, width = cut_imgs[detected_count].shape[:2]
+            for i in range(SILO_CAPACITY):
+                # 各領域の範囲を計算
+                start_y = i * int(height / 3)
+                end_y = (i + 1) * int(height / 3)
 
-    for i in range(NUMBER_OF_SILOS):
-        if silos[i].detection_flag == True:
-            for j in range(SILO_CAPACITY):
-                if(silos[i].balls[j] == "None"):
-                    # 各領域の範囲を計算
-                    start_y = j * region_height[i]
-                    end_y = (j + 1) * region_height[i]
+                # 領域を切り取り
+                region = cut_imgs[detected_count][start_y:end_y, :]
 
-                    # 領域を切り取り
-                    region = cut_imgs[i][start_y:end_y, :]
+                # BGR形式からHSV形式に変換
+                region_hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
 
-                    # BGR形式からHSV形式に変換
-                    region_hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
+                # 赤色および青色のHSV範囲（調整が必要な場合は変更）
+                red_lower = np.array([0, 100, 100])
+                red_upper = np.array([10, 255, 255])
+                blue_lower = np.array([100, 70, 50])
+                blue_upper = np.array([140, 255, 255])
+                purple_lower = np.array([240, 30, 50])
+                purple_upper = np.array([255, 50, 255])
 
-                    # 赤色および青色のHSV範囲（調整が必要な場合は変更）
-                    red_lower = np.array([0, 100, 100])
-                    red_upper = np.array([10, 255, 255])
-                    blue_lower = np.array([100, 70, 50])
-                    blue_upper = np.array([140, 255, 255])
+                # 赤色と青色の領域を抽出
+                red_mask = cv2.inRange(region_hsv, red_lower, red_upper)
+                blue_mask = cv2.inRange(region_hsv, blue_lower, blue_upper)
+                purple_mask = cv2.inRange(region_hsv, purple_lower, purple_upper)
 
-                    # 赤色と青色の領域を抽出
-                    red_mask = cv2.inRange(region_hsv, red_lower, red_upper)
-                    blue_mask = cv2.inRange(region_hsv, blue_lower, blue_upper)
+                # 赤色と青色のピクセル数をカウント
+                red_pixels = cv2.countNonZero(red_mask)
+                blue_pixels = cv2.countNonZero(blue_mask)
+                purple_pixels = cv2.countNonZero(purple_mask)
 
-                    # 赤色と青色のピクセル数をカウント
-                    red_pixels = cv2.countNonZero(red_mask)
-                    blue_pixels = cv2.countNonZero(blue_mask)
+                # 画像内のピクセル数
+                total_pixels = region_hsv.shape[0] * region_hsv.shape[1]
 
-                    # 画像内のピクセル数
-                    total_pixels = region_hsv.shape[0] * region_hsv.shape[1]
-
-                    # 赤色と青色の割合を計算
-                    red_ratio = red_pixels / total_pixels
-                    blue_ratio = blue_pixels / total_pixels
-                    
-                    if red_ratio> 0.4:
-                        silos[i].balls[j] = "red"
-                        # print(f"Region {j + 1}: Dominant Color - Red")
-                    elif blue_ratio > 0.4:
-                        silos[i].balls[j] = "blue"
-                        # print(f"Region {j + 1}: Dominant Color - Blue")
-                    else:
-                        silos[i].balls[j] = "None"
-                        # print(f"Region {j + 1}: No dominant color or not dominant enough")
+                # 赤色と青色の割合を計算
+                red_ratio = red_pixels / total_pixels
+                blue_ratio = blue_pixels / total_pixels
+                purple_ratio = purple_pixels / total_pixels
+                
+                if red_ratio > 0.4:
+                    silo.balls[i] = "red"
+                elif blue_ratio > 0.4:
+                    silo.balls[i] = "blue"
+                elif purple_ratio > 0.4:
+                    silo.balls[i] = "purple"
+                else:
+                    silo.balls[i] = "None"
+            detected_count += 1
                 
     return silos
 
