@@ -1,3 +1,4 @@
+. bash/keep_safe.bash
 . bash/setup_install.bash
 
 run_command() {
