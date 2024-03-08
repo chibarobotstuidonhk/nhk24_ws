@@ -1,0 +1,6 @@
+src
+build
+log
+install
+old
+**/__pycache__

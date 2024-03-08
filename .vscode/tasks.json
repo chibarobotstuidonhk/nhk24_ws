@@ -1,0 +1,56 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "stew: g++ build active file",
+			"type": "cppbuild",
+			"command": "g++-13",
+			"args": [
+				"-g",
+				"${file}",
+				"-Wall",
+				"-Wextra",
+				"-fdiagnostics-color=always",
+				"-fconcepts-diagnostics-depth=5",
+				"-fsanitize=undefined",
+				"-pedantic-errors",
+				"-std=c++23",
+				"-I/home/stew/stew_programming/nhk24/2nd_ws",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "stew: setup and build",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"\". ./bash/setup.bash && . ./bash/build_src.bash\""
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "remove build install log",
+			"type": "shell",
+			"command": "rm",
+			"args": [
+				"-rf",
+				"./build",
+				"./install",
+				"./log"
+			],
+			"problemMatcher": []
+		}
+	]
+}
