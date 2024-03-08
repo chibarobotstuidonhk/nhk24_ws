@@ -4,10 +4,14 @@
 
 # Get the directory of the script, and the workspace directory
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-ws_dir="$script_dir/../"
+ws_dir="$script_dir/.."
 
 # Install ros packages ############################################################
+mkdir "$ws_dir/src"
 cd "$ws_dir/src" || exit
+
+# Install r2
+git clone https://github.com/Stew-000-1-0-011/r2.git
 
 # Install urg_node2 collected by Stew-000-1-0-011
 git clone https://github.com/Stew-000-1-0-011/urg_node2.git
@@ -20,6 +24,7 @@ git clone https://github.com/Stew-000-1-0-011/odometry2024.git
 
 
 # Install tools ###################################################################
+mkdir "$ws_dir/tool"
 cd "$ws_dir/tool" || exit
 
 # Install Get_coordinate_on_map
