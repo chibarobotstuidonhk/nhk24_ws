@@ -32,3 +32,5 @@ git clone https://github.com/Won-CCS/Get_coordinate_on_map.git
 
 # Install map_editor
 git clone https://github.com/Stew-000-1-0-011/map_editor.git
+
+cd "$ws_dir" || exit
