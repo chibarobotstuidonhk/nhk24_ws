@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}",
                 "/opt/ros/humble/include/**",
-                "src/r2/include"
+                "src/r2/include",
+                "install/can_plugins2/include/can_plugins2"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++-13",
