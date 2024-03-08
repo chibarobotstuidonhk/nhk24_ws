@@ -3,4 +3,5 @@ build
 log
 install
 old
+tool
 **/__pycache__
