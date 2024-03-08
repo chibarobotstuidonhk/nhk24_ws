@@ -15,6 +15,8 @@ git clone https://github.com/Stew-000-1-0-011/r2.git
 
 # Install urg_node2 collected by Stew-000-1-0-011
 git clone https://github.com/Stew-000-1-0-011/urg_node2.git
+rosdep update
+rosdep install -i --from-paths urg_node2
 
 # Install can_plugins2
 git clone https://github.com/IndigoCarmine/can_plugins2.git
