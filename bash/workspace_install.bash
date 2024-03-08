@@ -12,7 +12,7 @@ cd "$ws_dir/src" || exit
 git clone https://github.com/Stew-000-1-0-011/r2.git
 
 # Install urg_node2 collected by Stew-000-1-0-011
-git clone https://github.com/Stew-000-1-0-011/urg_node2.git
+git clone https://github.com/Stew-000-1-0-011/urg_node2.git --recursive
 rosdep update
 rosdep install -i --from-paths urg_node2
 
