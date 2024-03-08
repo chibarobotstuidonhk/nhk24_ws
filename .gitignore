@@ -1,4 +1,4 @@
-.vscode
+# .vscode  修正が多いので、もうignoreしないことにした。今まで無視しててごめんね。
 src
 build
 log
