@@ -74,6 +74,10 @@
 		"*.txx": "cpp",
 		"expected": "cpp",
 		"any": "cpp",
-		"ranges": "cpp"
+		"ranges": "cpp",
+		"csignal": "cpp",
+		"codecvt": "cpp",
+		"coroutine": "cpp",
+		"future": "cpp"
 	}
 }

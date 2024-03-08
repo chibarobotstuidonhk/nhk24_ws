@@ -32,6 +32,10 @@ namespace nhk24_2nd_ws::xyth::impl {
 			return Xy{x, y};
 		}
 
+		static constexpr auto from_polar(double r, double th) noexcept -> Xy {
+			return Xy{r * std::cos(th), r * std::sin(th)};
+		}
+
 		static constexpr auto zero() noexcept -> Xy {
 			return Xy{0.0, 0.0};
 		}
