@@ -1,7 +1,5 @@
 # Desc: Install workspace dependencies
 
-. bash/keep_safe.bash
-
 # Get the directory of the script, and the workspace directory
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 ws_dir="$script_dir/.."
