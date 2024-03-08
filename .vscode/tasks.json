@@ -15,7 +15,7 @@
 				"-fsanitize=undefined",
 				"-pedantic-errors",
 				"-std=c++23",
-				"-I/./include",
+				"-I${workspaceFolder}",
 				"-o",
 				"${fileDirname}/${fileBasenameNoExtension}"
 			],
