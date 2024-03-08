@@ -1,3 +1,5 @@
+# setup.bashをsourceしrun_commandを追加
+
 . bash/setup_install.bash
 
 run_command() {
