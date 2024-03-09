@@ -1,0 +1,6 @@
+image: area3_yellow.png
+resolution: 0.025
+origin: [0.0, 0.0, 0.0]
+negate: 0
+occupied_thresh: 0.6
+free_thresh: 0.4
