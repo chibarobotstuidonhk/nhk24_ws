@@ -1,3 +1,5 @@
+# エリア1のスタート位置から始めることを想定している、エリア2からのスタートでは初期位置を変えること
+
 amcl:
   ros__parameters:
     alpha1: 0.2
@@ -41,8 +43,8 @@ amcl:
     set_initial_pose: true
     always_reset_initial_pose: false
     first_map_only: false
-    initial_pose:
-      x: 1.5
-      y: 1.5
+    initial_pose:  #
+      x: 5.425
+      y: 0.400
       z: 0.0
       yaw: 0.0
