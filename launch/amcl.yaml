@@ -40,11 +40,11 @@ amcl:
     z_short: 0.05
     scan_topic: scan
     map_topic: map
-    set_initial_pose: true
-    always_reset_initial_pose: false
+    set_initial_pose: false  # パラメータを使うつもりはない
+    always_reset_initial_pose: true  # こっちはなんとなく間違いを減らせそうなんでtrueに
     first_map_only: false
-    initial_pose:  #
-      x: 5.425
-      y: 0.400
+    initial_pose:  # r2_nodeから変更するのでここではやらない
+      x: 0.0
+      y: 0.0
       z: 0.0
       yaw: 0.0

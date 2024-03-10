@@ -78,6 +78,8 @@
 		"csignal": "cpp",
 		"codecvt": "cpp",
 		"coroutine": "cpp",
-		"future": "cpp"
+		"future": "cpp",
+		"shared_mutex": "cpp",
+		"stdfloat": "cpp"
 	}
 }
