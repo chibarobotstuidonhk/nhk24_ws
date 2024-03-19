@@ -17,21 +17,12 @@ NUMBER_OF_SILOS = 5
 SILO_CAPACITY = 3
 
 class Vector:
-    x = 0
-    y = 0
-    z = 0
-
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
 
 class Coordinate:
-    x = 0
-    y = 0
-    z = 0
-    theta = 0
-
     def __init__(self, x, y, z, theta):
         self.x = x
         self.y = y
@@ -39,11 +30,12 @@ class Coordinate:
         self.theta = theta
 
 class Camera:
-    # 外部パラメータ
-    rmat = np.array([[0, -1, 0], 
-                     [0, 0, -1], 
-                     [1, 0, 0]], dtype=np.float32)
-    tvec = np.array([[0], [0], [0]], dtype=np.float32)
+    def __init__(self):
+        # 外部パラメータ
+        self.rmat = np.array([[0, -1, 0], 
+                            [0, 0, -1], 
+                            [1, 0, 0]], dtype=np.float32)
+        self.tvec = np.array([[0], [0], [0]], dtype=np.float32)
     # 内部パラメータ
     # Logiccolのc922
     # focal_length = 0.001
@@ -84,7 +76,7 @@ class SiloObserver(Node):
         super().__init__('silo_observer_node')
         # Declare and acquire `target_frame` parameter
         self.target_frame = self.declare_parameter(
-          'target_frame', 'base_link').get_parameter_value().string_value
+          'target_frame', 'camera_link').get_parameter_value().string_value
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -92,9 +84,7 @@ class SiloObserver(Node):
         self.publisher = self.create_publisher(SilosStatus, 'silos_status', 1)
 
         self.camera = Camera()
-        # サイロの座標
         self.silos = [Silo(Coordinate(6000, 11500, 100, 0)), Silo(Coordinate(6000, 10750, 100, 0)), Silo(Coordinate(6000, 10000, 100, 0)), Silo(Coordinate(6000, 9250, 100, 0)), Silo(Coordinate(6000, 8500, 100, 0))]
-        # self.silos = [Silo(Coordinate(4000, 1000, 0, 0))]
 
         # 過去の状態を保存するキュー
         self.past_states = queue.Queue()
@@ -104,24 +94,24 @@ class SiloObserver(Node):
     
     def on_timer(self):
         # transformの取得に使用する変数にフレーム名を格納する。
-        from_frame_rel = self.target_frame
-        to_frame_rel = 'map'
+        # from_frame_rel = self.target_frame
+        to_frame_rel = 'camera_link'
 
         try:
-            t = self.tf_buffer.lookup_transform(
-                to_frame_rel,
-                from_frame_rel,
-                rclpy.time.Time())
-            
-            # カメラの外部パラメータ(ここは機体座標と、機体の姿勢から逐次的に求める必要がある)
-            quat = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
-            self.camera.rmat = quaternion_to_rotation_matrix(quat) * np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float32)
-            self.camera.rmat = np.array([[0, -1, 0], 
-                     [0, 0, -1], 
-                     [1, 0, 0]], dtype=np.float32)
-            self.camera.tvec = np.matmul(self.camera.rmat, np.array([[t.transform.translation.x], [t.transform.translation.y], [t.transform.translation.z]], dtype=np.float32)) + np.array([[0], [0], [0]], dtype=np.float32)# 機体中心からカメラの位置までのベクトル
+            # t = self.tf_buffer.lookup_transform(
+            #     to_frame_rel,
+            #     from_frame_rel,
+            #     rclpy.time.Time())
+            # # カメラの外部パラメータ(ここは機体座標と、機体の姿勢から逐次的に求める必要がある)
+            # quat = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
+            # # 機体座標系をx軸周りに90度回転させ、カメラ座標系へ
+            # self.camera.rmat = np.matmul(np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=np.float32), quaternion_to_rotation_matrix(quat))
+            # # カメラ座標系での機体位置の座標を求め、機体中心からカメラまでのベクトルを足すことでカメラ座標系でのカメラの位置を表す
+            # self.camera.tvec = np.matmul(self.camera.rmat, np.array([[t.transform.translation.x], [t.transform.translation.y], [0]], dtype=np.float32)) + np.array([[0], [0], [50]], dtype=np.float32)
 
-            # サイロの座標を取得
+            # self.get_logger().info(f'camera rmat : {self.camera.rmat} : camera.tvec: {self.camera.tvec}')
+
+            # カメラ座標系でのサイロの座標を取得
             count = 0
             for i in ['a', 'b', 'c', 'd', 'e']:
                 frame = 'silo_' + i
@@ -129,14 +119,14 @@ class SiloObserver(Node):
                     to_frame_rel,
                     frame,
                     rclpy.time.Time())
-                
                 self.silos[count] = Silo(Coordinate(t.transform.translation.x, t.transform.translation.y, t.transform.translation.z, 0))
+                # self.get_logger().info(f'{self.silos[count].bottom_coordinate}')
                 count += 1
             
         except TransformException as ex:
-            self.get_logger().info(
-                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
-            return
+            # self.get_logger().info(
+            #     f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            # return
 
         # 現在の状態を取得
         self.observe_silos()
@@ -158,7 +148,7 @@ class SiloObserver(Node):
             most_common_state = max(counter, key=counter.get)
             self.silos[i].balls = list(most_common_state)
 
-        # 状態をpublish
+        # 状態を詰めてpublish
         msg = SilosStatus()
         msg.a.red = self.silos[0].balls.count("red")
         msg.a.blue = self.silos[0].balls.count("blue")
@@ -188,22 +178,21 @@ class SiloObserver(Node):
         ret, frame = cap.read()
 
         # カメラ画像上のサイロの頂点の座標を取得
-        self.silos = world_to_camera_coordinate(self.silos, self.camera)
+        # self.silos = world_to_camera_coordinate(self.silos, self.camera)
         self.silos = camera_to_image_coordinate(self.silos, self.camera)
 
         # 画像を切り取ってボール検出
         self.silos, cut_imgs = cut_image(self.silos, frame)
-
         self.silos = detect_balls(self.silos, cut_imgs)
 
-        # カットした画像表示
-        xx = 0
-        for img in cut_imgs:
-            cv2.namedWindow('cut'+str(xx), cv2.WINDOW_NORMAL)
-            cv2.imshow('cut'+str(xx), img)
-            xx += 1
+        # # カットした画像表示
+        # xx = 0
+        # for img in cut_imgs:
+        #     cv2.namedWindow('cut'+str(xx), cv2.WINDOW_NORMAL)
+        #     cv2.imshow('cut'+str(xx), img)
+        #     xx += 1
 
-        # 画像を表示
+        # サイロ位置を示したカメラ画像を表示
         for silo in self.silos:
             if silo.detection_flag == True:
                 cv2.circle(frame, (int(silo.bottom_image_coordinate[0][0]), int(silo.bottom_image_coordinate[1][0])), 10, (0, 0, 255), thickness=cv2.FILLED)
@@ -218,12 +207,15 @@ class SiloObserver(Node):
         #メモリを解放して終了するためのコマンド
         cap.release()
         
-# クォータニオンから回転行列に変換
-def quaternion_to_rotation_matrix(quat):
-    x, y, z, w = quat
-    rmat = np.array([[1 - 2 * y ** 2 - 2 * z ** 2, 2 * x * y - 2 * z * w, 2 * x * z + 2 * y * w], [2 * x * y + 2 * z * w, 1 - 2 * x ** 2 - 2 * z ** 2, 2 * y * z - 2 * x * w], [2 * x * z - 2 * y * w, 2 * y * z + 2 * x * w, 1 - 2 * x ** 2 - 2 * y ** 2]], dtype=np.float32)
+# # クォータニオンから回転行列に変換
+# def quaternion_to_rotation_matrix(quat):
+#     x = quat[0]
+#     y = quat[1]
+#     z = quat[2]
+#     w = quat[3]
+#     rmat = np.array([[2*w**2 + 2*x**2 - 1, 2*x*y - 2*z*w, 2*x*z + 2*y*w], [2*x*y + 2*z*w, 2*w**2 + 2*y**2 - 1, 2*y*z - 2*x*w], [2*x*z - 2*y*w, 2*y*z + 2*x*w, 2*w**2 + 2*z**2 - 1]], dtype=np.float32)
     
-    return rmat
+#     return rmat
 
 # カメラ画像上のサイロの頂点の座標を取得
 def world_to_camera_coordinate(silos, camera):
@@ -269,6 +261,14 @@ def cut_image(silos, image):
 
 # サイロ部分の画像からボールを検出
 def detect_balls(silos, cut_imgs):
+    # HSV範囲（調整が必要な場合は変更）
+    red_lower = np.array([0, 100, 100])
+    red_upper = np.array([10, 255, 255])
+    blue_lower = np.array([100, 70, 50])
+    blue_upper = np.array([140, 255, 255])
+    purple_lower = np.array([240, 30, 50])
+    purple_upper = np.array([255, 50, 255])
+
     detected_count = 0
     for silo in silos:
         if silo.detection_flag == True:
@@ -279,26 +279,21 @@ def detect_balls(silos, cut_imgs):
                 start_y = i * int(height / 3)
                 end_y = (i + 1) * int(height / 3)
 
+                if start_y <= 0 or end_y <= 0:
+                    break
+
                 # 領域を切り取り
                 region = cut_imgs[detected_count][start_y:end_y, :]
 
                 # BGR形式からHSV形式に変換
                 region_hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
 
-                # 赤色および青色のHSV範囲（調整が必要な場合は変更）
-                red_lower = np.array([0, 100, 100])
-                red_upper = np.array([10, 255, 255])
-                blue_lower = np.array([100, 70, 50])
-                blue_upper = np.array([140, 255, 255])
-                purple_lower = np.array([240, 30, 50])
-                purple_upper = np.array([255, 50, 255])
-
-                # 赤色と青色の領域を抽出
+                # それぞれの色の領域を抽出
                 red_mask = cv2.inRange(region_hsv, red_lower, red_upper)
                 blue_mask = cv2.inRange(region_hsv, blue_lower, blue_upper)
                 purple_mask = cv2.inRange(region_hsv, purple_lower, purple_upper)
 
-                # 赤色と青色のピクセル数をカウント
+                # それぞれの色のピクセル数をカウント
                 red_pixels = cv2.countNonZero(red_mask)
                 blue_pixels = cv2.countNonZero(blue_mask)
                 purple_pixels = cv2.countNonZero(purple_mask)
@@ -306,7 +301,7 @@ def detect_balls(silos, cut_imgs):
                 # 画像内のピクセル数
                 total_pixels = region_hsv.shape[0] * region_hsv.shape[1]
 
-                # 赤色と青色の割合を計算
+                # それぞれの色の割合を計算
                 red_ratio = red_pixels / total_pixels
                 blue_ratio = blue_pixels / total_pixels
                 purple_ratio = purple_pixels / total_pixels
