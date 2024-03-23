@@ -8,7 +8,7 @@
 #include <shared_mutex>
 #include <optional>
 
-namespace nhk24_2nd_ws::r2::wanko {
+namespace nhk24_2nd_ws::wanko {
 	template<class T_>
 	struct Wanko final {
 		std::mutex mtx{};

@@ -1,5 +1,5 @@
 #pragma once
 
-namespace nhk24_2nd_ws::r2::void_ {
+namespace nhk24_2nd_ws::void_ {
 	struct Void final {};
 }

@@ -3,7 +3,7 @@
 #include <shared_mutex>
 #include <mutex>
 
-namespace nhk24_2nd_ws::r2::mutexed {
+namespace nhk24_2nd_ws::mutexed {
 	template<class T_>
 	struct Mutexed final {
 		std::shared_mutex mtx;
