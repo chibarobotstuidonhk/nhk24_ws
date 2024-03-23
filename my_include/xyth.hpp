@@ -9,6 +9,7 @@
 #include <numbers>
 
 #include "operator_generator.hpp"
+#include "debug_print.hpp"
 
 namespace nhk24_2nd_ws::xyth::impl {
 	using nhk24_2nd_ws::operator_generator::BinaryLeftOp;
@@ -177,4 +178,35 @@ namespace nhk24_2nd_ws::xyth {
 	using impl::XyzOp;
 	using impl::Xyth;
 	using impl::XythNearistDiffOp;
+}
+
+namespace nhk24_2nd_ws::debug_print::impl {
+	template<>
+	struct DebugPrint<xyth::Xy> {
+		static constexpr std::string_view name = "Xy";
+
+		static void print(const xyth::Xy& xy) {
+			std::cout << "Xy{" << xy.x << ", " << xy.y << "}";
+		}
+	};
+
+	template<>
+	struct DebugPrint<xyth::Xyz> {
+		static constexpr std::string_view name = "Xyz";
+
+		static void print(const xyth::Xyz& xyz) {
+			std::cout << "Xyz{" << xyz.x << ", " << xyz.y << ", " << xyz.z << "}";
+		}
+	};
+
+	template<>
+	struct DebugPrint<xyth::Xyth> {
+		static constexpr std::string_view name = "Xyth";
+
+		static void print(const xyth::Xyth& xyth) {
+			std::cout << "Xyth{";
+			DebugPrint<xyth::Xy>::print(xyth.xy);
+			std::cout << ", " << xyth.th << "}";
+		}
+	};
 }
