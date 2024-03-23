@@ -3,7 +3,7 @@
 
 ## 必要なものをインストールする方法
 ```bash
-git clone https://github.com/chibarobotstuidonhk/nhk24_ws.git
+git clone https://github.com/chibarobotstuidonhk/nhk24_ws.git -b 2nd_ws
 . bash/workspace_install.sh
 ```
 ビルドは自分でやってください。`. bash/build_src.bash`でもできます。
