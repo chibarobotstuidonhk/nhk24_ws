@@ -5,6 +5,7 @@ run_command "filter_node" "ros2 run r2 filter_node"
 
 # MAP -> /map
 run_command "map_server" "ros2 run nav2_map_server map_server --ros-args --params-file launch/map_server.yaml"
+# run_command "map_server" "ros2 run nav2_map_server map_server"  # これではダメ、ダミーでも良いのでyamlファイルを指定しないと動かない
 
 # URDF -> TF2 Smth about robot joint
 run_command "robot_state_publisher" "ros2 launch launch/robot_state_publisher.launch.py"
