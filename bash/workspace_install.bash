@@ -4,6 +4,13 @@
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 ws_dir="$script_dir/.."
 
+# check if the directory already exists
+if [ -d "$ws_dir/already_installed" ]; then
+    echo "Error: Directory $ws_dir/src already exists. Maybe you have already installed the workspace."
+    exit 1
+fi
+mkdir "$ws_dir/already_installed"
+
 # Install ros packages ############################################################
 mkdir "$ws_dir/src"
 cd "$ws_dir/src" || exit
