@@ -1,7 +1,5 @@
 # # LiDAR(frame: laser) -> /scan_nonfiltered 
 run_command "urg_node2" "ros2 launch launch/urg_node2.launch.py"
-# /scan_nonfiltered -> /scan
-run_command "filter_node" "ros2 run r2 filter_node"
 
 # MAP -> /map
 run_command "map_server" "ros2 run nav2_map_server map_server --ros-args --params-file launch/map_server.yaml"
