@@ -8,6 +8,6 @@ run_command "joy" "ros2 run joy joy_node"
 
 # lifecycle is now managed by r2_node
 
-# give first map -> odom transform
-sleep 0.5
-ros2 run tf2_ros static_transform_publisher --frame-id map --child-frame-id odom --x 5.5 --y 0.4 --z 0 --roll 0 --pitch 0 --yaw 0
+# # give first map -> odom transform
+# sleep 0.5
+# ros2 run tf2_ros static_transform_publisher --frame-id map --child-frame-id odom --x 5.5 --y 0.4 --z 0 --roll 0 --pitch 0 --yaw 0
