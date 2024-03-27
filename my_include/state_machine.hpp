@@ -26,8 +26,10 @@
 #include <optional>
 #include <memory>
 #include <stop_token>
+#include <chrono>
 
 #include <my_include/std_types.hpp>
+#include <my_include/debug_print.hpp>
 
 namespace nhk24_2nd_ws::state_machine::impl {
 	template<class Io_>
@@ -91,6 +93,7 @@ namespace nhk24_2nd_ws::state_machine::impl {
 			auto content = this->setup(io);
 
 			while(!io.kill_interrupted()){
+				const auto before_task = std::chrono::system_clock::now();
 				std::this_thread::sleep_for(this->sleep_duration);
 
 				auto next_state = std::optional<std::unique_ptr<StateBase<Io_>>>{};
@@ -102,6 +105,12 @@ namespace nhk24_2nd_ws::state_machine::impl {
 				if(next_state.has_value()) {
 					return std::move(*next_state);
 				}
+
+				if(std::chrono::system_clock::now() - before_task > this->sleep_duration) {
+					debug_print::printlns("time over!");
+				}
+
+				std::this_thread::sleep_until(before_task + this->sleep_duration);
 			}
 
 			return nullptr;
